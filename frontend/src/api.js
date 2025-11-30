@@ -1,0 +1,30 @@
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'
+
+async function request(path, { method = 'GET', body, token } = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = data.detail || res.statusText
+    throw new Error(msg)
+  }
+  return data
+}
+
+export const api = {
+  signup: (payload) => request('/auth/signup', { method: 'POST', body: payload }),
+  login: (payload) => request('/auth/login', { method: 'POST', body: payload }),
+  pending: (token) => request('/admin/pending', { token }),
+  approve: (payload, token) => request('/admin/approve', { method: 'POST', body: payload, token }),
+  chat: (payload, token) => request('/chat/query', { method: 'POST', body: payload, token }),
+  threads: (token) => request('/chat/threads', { token }),
+  messages: (threadId, token) => request(`/chat/threads/${threadId}/messages`, { token }),
+}
+
+export { API_BASE }

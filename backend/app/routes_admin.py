@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from .auth import require_role
 from .models import Role
+from .schemas import ApproveRequest
 from .store import store
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -17,8 +18,12 @@ def list_pending(_: str = Depends(require_role(Role.ADMIN))):
 
 
 @router.post("/approve")
-def approve(user_id: int, role: Role, _: str = Depends(require_role(Role.ADMIN))):
-    user = store.approve_user(user_id, role)
+def approve(payload: ApproveRequest, _: str = Depends(require_role(Role.ADMIN))):
+    try:
+        role = Role(payload.role)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
+    user = store.approve_user(payload.user_id, role)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return {"status": "approved", "role": user.role.value}

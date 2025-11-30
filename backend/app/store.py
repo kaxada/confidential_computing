@@ -14,6 +14,12 @@ class InMemoryStore:
         # Seed an admin for bootstrapping.
         self.create_user("admin@example.com", "admin", Role.ADMIN, approved=True, role=Role.ADMIN)
 
+    def reset(self):
+        # Reset state for tests; re-seed admin.
+        self._id_gen = itertools.count(1)
+        self._users = {}
+        self.create_user("admin@example.com", "admin", Role.ADMIN, approved=True, role=Role.ADMIN)
+
     def _hash_password(self, password: str) -> str:
         # Demo-grade hashing; replace with bcrypt/argon2 in real use later.
         return hashlib.sha256(password.encode()).hexdigest()

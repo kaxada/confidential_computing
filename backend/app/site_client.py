@@ -14,7 +14,7 @@ def send_query(question: str, role: str, user_id: int) -> dict:
         resp.raise_for_status()
         return resp.json()
     except Exception:
-        # Offline stub keeps the hub happy while site/enclave is not up.
+        # fall back when enclave is not available.
         return {
             "answer": f"[stubbed answer] You asked: '{question}'. Role: {role}.",
             "source_docs": ["stub-doc-1"],

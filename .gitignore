@@ -1,0 +1,5 @@
+*venv/ 
+*docs/
+guid*
+*.log
+.DS_Store

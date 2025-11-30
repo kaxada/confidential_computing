@@ -1,0 +1,49 @@
+name: Deploy Hub (backend + frontend)
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "infra/**"
+      - ".github/workflows/deploy-hub.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build frontend
+      - run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Create deployment bundle
+      - run: |
+          tar czf /tmp/confidential_bundle.tgz \
+            backend frontend/dist infra
+
+      - name: Copy bundle to hub
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HUB_HOST }}
+          username: ${{ secrets.HUB_USER }}
+          key: ${{ secrets.HUB_SSH_KEY }}
+          source: "/tmp/confidential_bundle.tgz"
+          target: "/tmp/confidential_bundle.tgz"
+
+      - name: Deploy on hub
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HUB_HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            bash /opt/confidential/infra/scripts/deploy_hub.sh /tmp/confidential_bundle.tgz

@@ -1,0 +1,13 @@
+[Unit]
+Description=Confidential Site RAG Service
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/confidential/site-node
+ExecStart=/bin/bash -lc 'source /opt/confidential/venv-site/bin/activate && python site_service.py'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

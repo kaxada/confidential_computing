@@ -1,0 +1,15 @@
+[Unit]
+Description=Confidential RAG Hub Backend
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/confidential/backend
+Environment="DATABASE_URL=${DATABASE_URL}"
+Environment="SITE_BASE_URL=${SITE_BASE_URL:-http://localhost:9000}"
+ExecStart=/bin/bash -lc 'source /opt/confidential/venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

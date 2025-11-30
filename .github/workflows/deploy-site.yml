@@ -14,12 +14,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create deployment bundle
-      - run: |
+        run: |
           tar czf /tmp/confidential_site_bundle.tgz \
             site-node infra
 
       - name: Copy bundle to site
-      - uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SITE_HOST }}
           username: ${{ secrets.SITE_USER }}
@@ -28,7 +28,7 @@ jobs:
           target: "/tmp/confidential_site_bundle.tgz"
 
       - name: Deploy on site
-      - uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SITE_HOST }}
           username: ${{ secrets.USER }}

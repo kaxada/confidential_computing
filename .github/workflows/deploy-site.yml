@@ -22,8 +22,8 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SITE_HOST }}
-          username: ${{ secrets.SITE_USER }}
-          key: ${{ secrets.SITE_SSH_KEY }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
           source: "/tmp/confidential_site_bundle.tgz"
           target: "/tmp/confidential_site_bundle.tgz"
 

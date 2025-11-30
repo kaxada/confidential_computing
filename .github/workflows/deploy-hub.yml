@@ -34,8 +34,8 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HUB_HOST }}
-          username: ${{ secrets.HUB_USER }}
-          key: ${{ secrets.HUB_SSH_KEY }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
           source: "/tmp/confidential_bundle.tgz"
           target: "/tmp/confidential_bundle.tgz"
 

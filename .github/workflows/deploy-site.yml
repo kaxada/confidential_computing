@@ -16,7 +16,8 @@ jobs:
 
       - name: Create deployment bundle
         run: |
-          tar czf /tmp/confidential_site_bundle.tgz \
+          # Create bundle in current workspace so scp-action can see it
+          tar czf confidential_site_bundle.tgz \
             site-node infra
 
       - name: Copy bundle to site
@@ -25,8 +26,8 @@ jobs:
           host: ${{ secrets.SITE_HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "/tmp/confidential_site_bundle.tgz"
-          target: "/tmp/confidential_site_bundle.tgz"
+          source: "confidential_site_bundle.tgz"
+          target: "/tmp"
 
       - name: Deploy on site
         uses: appleboy/ssh-action@v1.0.3

@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import db
-from .routes_admin import router as admin_router
-from .routes_auth import router as auth_router
-from .routes_chat import router as chat_router
-from .services import init_admin
+from app.api.routes.admin import router as admin_router
+from app.api.routes.auth import router as auth_router
+from app.api.routes.chat import router as chat_router
+from app.core import db
+from app.services.user import init_admin
 
 app = FastAPI(title="Confidential RAG Hub", version="0.1.0")
 

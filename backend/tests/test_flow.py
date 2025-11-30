@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db
+from app.core import db
 from app.main import app
-from app.services import init_admin
+from app.services.user import init_admin
 
 
 def setup_function():

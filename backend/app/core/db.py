@@ -7,8 +7,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from .config import settings
 
 Base = declarative_base()
-
-# Lazy init: allow overriding via settings.database_url
 engine = create_engine(settings.database_url, future=True, echo=False)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 

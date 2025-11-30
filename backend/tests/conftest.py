@@ -10,8 +10,8 @@ from sqlalchemy.pool import StaticPool
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
-from app import db, config
-from app.db import Base, get_session
+from app.core import db, config
+from app.core.db import Base, get_session
 
 
 def pytest_sessionstart(session):
@@ -45,7 +45,7 @@ def db_session(monkeypatch, db_engine):
         finally:
             pass
 
-    monkeypatch.setattr("app.db.get_session", _get_session)
+    monkeypatch.setattr("app.core.db.get_session", _get_session)
     try:
         yield session
     finally:

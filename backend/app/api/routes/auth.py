@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .auth import create_token
-from .db import get_session
-from .models import Role
-from .schemas import LoginRequest, SignupRequest
-from .services import create_user, get_user_by_email, verify_credentials
+from app.core.security import create_token, decode_token
+from app.core.db import get_session
+from app.models import Role, User
+from app.schemas import LoginRequest, SignupRequest
+from app.services.user import create_user, get_user_by_email, verify_credentials
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -30,5 +30,10 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if not user.approved:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account pending approval")
-    token = create_token(user)
+    token = create_token(
+        {
+            "sub": str(user.id),
+            "role": user.role.value if user.role else user.requested_role.value,
+        }
+    )
     return {"token": token, "role": user.role.value if user.role else None}

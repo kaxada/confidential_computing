@@ -1,10 +1,10 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import ChatMessage, ChatThread, Role, User
+from app.models import Role, User
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
@@ -15,7 +15,7 @@ def init_admin(session: Session):
     if session.execute(stmt).scalar_one_or_none() is None:
         admin = User(
             email=admin_email,
-            password_hash=pwd_context.hash("admin"),
+            password_hash=hash_password("admin"),
             requested_role=Role.ADMIN,
             role=Role.ADMIN,
             approved=1,
@@ -24,10 +24,14 @@ def init_admin(session: Session):
         session.commit()
 
 
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+
 def create_user(session: Session, email: str, password: str, requested_role: Role) -> User:
     user = User(
         email=email.lower(),
-        password_hash=pwd_context.hash(password),
+        password_hash=hash_password(password),
         requested_role=requested_role,
         role=None,
         approved=0,
@@ -67,33 +71,3 @@ def approve_user(session: Session, user_id: int, role: Role) -> Optional[User]:
     session.commit()
     session.refresh(user)
     return user
-
-
-def get_or_create_thread(session: Session, user_id: int, thread_id: Optional[int] = None, title: Optional[str] = None) -> ChatThread:
-    if thread_id:
-        thread = session.get(ChatThread, thread_id)
-        if thread and thread.user_id == user_id:
-            return thread
-    thread = ChatThread(user_id=user_id, title=title)
-    session.add(thread)
-    session.commit()
-    session.refresh(thread)
-    return thread
-
-
-def add_message(session: Session, thread: ChatThread, user_id: int, role: str, content: str) -> ChatMessage:
-    msg = ChatMessage(thread_id=thread.id, user_id=user_id, role=role, content=content)
-    session.add(msg)
-    session.commit()
-    session.refresh(msg)
-    return msg
-
-
-def list_threads(session: Session, user_id: int) -> List[ChatThread]:
-    stmt = select(ChatThread).where(ChatThread.user_id == user_id).order_by(ChatThread.created_at.desc())
-    return list(session.execute(stmt).scalars().all())
-
-
-def list_messages(session: Session, user_id: int, thread_id: int) -> List[ChatMessage]:
-    stmt = select(ChatMessage).where(ChatMessage.user_id == user_id, ChatMessage.thread_id == thread_id).order_by(ChatMessage.created_at)
-    return list(session.execute(stmt).scalars().all())

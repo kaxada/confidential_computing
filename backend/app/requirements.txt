@@ -4,3 +4,6 @@ pyjwt
 requests
 pydantic
 pydantic-settings
+sqlalchemy
+psycopg[binary]
+passlib[bcrypt]

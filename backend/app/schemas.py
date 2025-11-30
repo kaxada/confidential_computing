@@ -21,3 +21,16 @@ class ApproveRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     question: str
+    thread_id: Optional[int] = None
+    title: Optional[str] = None
+
+
+class ThreadResponse(BaseModel):
+    id: int
+    title: Optional[str] = None
+
+
+class MessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str

@@ -1,15 +1,16 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app import db
 from app.main import app
-from app.store import store
+from app.services import init_admin
 
 
-@pytest.fixture(autouse=True)
-def reset_store():
-    store.reset()
-    yield
-    store.reset()
+def setup_function():
+    db.Base.metadata.drop_all(bind=db.engine)
+    db.Base.metadata.create_all(bind=db.engine)
+    with db.SessionLocal() as session:
+        init_admin(session)
 
 
 def test_signup_approval_login_and_chat():
@@ -49,7 +50,7 @@ def test_signup_approval_login_and_chat():
     assert resp.status_code == 200
     user_token = resp.json()["token"]
 
-    # Chat returns stub response
+    # Chat returns stub response and creates thread/messages
     resp = client.post(
         "/chat/query",
         json={"question": "Hello?"},
@@ -57,4 +58,18 @@ def test_signup_approval_login_and_chat():
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert "answer" in data and "stubbed answer" in data["answer"]
+    assert "answer" in data
+    thread_id = data.get("thread_id")
+    assert thread_id is not None
+
+    # Fetch threads
+    resp = client.get("/chat/threads", headers={"Authorization": f"Bearer {user_token}"})
+    assert resp.status_code == 200
+    threads = resp.json()
+    assert any(t["id"] == thread_id for t in threads)
+
+    # Fetch messages
+    resp = client.get(f"/chat/threads/{thread_id}/messages", headers={"Authorization": f"Bearer {user_token}"})
+    assert resp.status_code == 200
+    msgs = resp.json()
+    assert len(msgs) == 2  # user question + assistant answer

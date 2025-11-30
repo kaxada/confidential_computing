@@ -4,10 +4,11 @@ from typing import Optional
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.orm import Session
 
 from .config import settings
+from .db import get_session
 from .models import Role, User
-from .store import store
 
 security = HTTPBearer()
 
@@ -30,10 +31,10 @@ def decode_token(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
-def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)) -> User:
+def get_current_user(session: Session = Depends(get_session), creds: HTTPAuthorizationCredentials = Depends(security)) -> User:
     payload = decode_token(creds.credentials)
     user_id = int(payload.get("sub"))
-    user = store._users.get(user_id)  # direct lookup is fine for in-memory demo
+    user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user

@@ -19,10 +19,6 @@ source "$VENV_DIR/bin/activate"
 pip install --upgrade pip
 pip install -r "$BACKEND_DIR/app/requirements.txt"
 
-cd "$FRONTEND_DIR"
-npm install --production=false
-# dist already built by CI; keep node_modules for preview/serve if needed
-
 sudo cp "$APP_DIR/infra/systemd/backend.service" /etc/systemd/system/backend.service
 sudo cp "$APP_DIR/infra/systemd/frontend.service" /etc/systemd/system/frontend.service
 sudo systemctl daemon-reload

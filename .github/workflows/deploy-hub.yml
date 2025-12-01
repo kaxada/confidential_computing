@@ -48,4 +48,5 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            bash /opt/confidential/infra/scripts/deploy_hub.sh /tmp/confidential_bundle.tgz
+            tar -xzf /tmp/confidential_bundle.tgz -C /tmp infra/scripts/deploy_hub.sh
+            bash /tmp/infra/scripts/deploy_hub.sh /tmp/confidential_bundle.tgz

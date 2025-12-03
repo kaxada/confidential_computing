@@ -1,0 +1,2 @@
+timestamp,site_id,user_id,role,privacy_level,user_input,bot_response
+2025-12-03T14:06:15.531344,site_1,cli_user,pi,none,I am having severe chest pain and trouble breathing,"⚠️ This sounds like a medical emergency. Please call 911 (US), 999 (UK), or your local emergency number immediately. If someone is unconscious, not breathing, or in severe distress, do not wait - get emergency help now."

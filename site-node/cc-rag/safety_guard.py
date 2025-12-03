@@ -108,7 +108,7 @@ class SafetyGuard:
                 print(f"DEBUG: Medical emergency detected: {emergency_match.group(0)}")
             logging.warning(f"Medical emergency keywords detected: '{emergency_match.group(0)}'")
             return (False, 
-                "⚠️ This sounds like a medical emergency. Please call 911 (US), 999 (UK), or your "
+                "This sounds like a medical emergency. Please call 911 (US), 999 (UK), or your "
                 "local emergency number immediately. If someone is unconscious, not breathing, or in "
                 "severe distress, do not wait - get emergency help now.")
         

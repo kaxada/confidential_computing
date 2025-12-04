@@ -19,6 +19,20 @@ jobs:
           tar czf confidential_site_bundle.tgz \
             site-node infra
 
+      - name: Free up disk space
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SITE_HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            echo "Cleaning up disk space..."
+            sudo docker system prune -af || true
+            sudo dnf clean all || true
+            sudo rm -rf /tmp/* || true
+            sudo rm -rf /var/tmp/confidential_deploy/* || true
+            df -h
+
       - name: Prep remote temp dir (avoid $HOME disk issues)
         uses: appleboy/ssh-action@v1.0.3
         with:

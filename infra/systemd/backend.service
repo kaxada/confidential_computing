@@ -1,13 +1,14 @@
 [Unit]
 Description=Confidential RAG Hub Backend
-After=network.target
+After=network.target postgresql.service
 
 [Service]
 Type=simple
 User=ec2-user
 WorkingDirectory=/opt/confidential/backend
-Environment="DATABASE_URL=${DATABASE_URL}"
-Environment="SITE_BASE_URL=${SITE_BASE_URL:-http://localhost:9000}"
+Environment="DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/confidential_rag"
+Environment="SITE_BASE_URL=http://localhost:8080"
+EnvironmentFile=-/opt/confidential/backend/.env
 ExecStart=/bin/bash -lc 'source /opt/confidential/venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000'
 Restart=always
 

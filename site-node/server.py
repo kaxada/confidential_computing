@@ -1,5 +1,5 @@
-# api_gateway.py
-# Site gateway that exposes retrieval/answer endpoints for the central hub
+# server.py
+# Single FastAPI server exposing retrieval/answer endpoints for the central hub
 # This would run inside the confidential computing enclave
 
 from fastapi import FastAPI, HTTPException, Depends, Header

@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Base directory for relative paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # --- LLM Provider Configuration ---
 # Choose provider: "openai" or "gemini"
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")  # Default to OpenAI (cheaper)
@@ -30,6 +33,18 @@ DEFAULT_GOOGLE_GENERATION_CONFIG = {
 }
 
 # --- Vector Database API Configuration ---
+VECTOR_DB_MODE = os.getenv("VECTOR_DB_MODE", "local").lower()  # "local" (default) or "http"
+
+# Local ChromaDB configuration (default: use ./data persistent DB)
+CHROMA_DB_PATH = os.getenv(
+    "CHROMA_DB_PATH",
+    os.path.abspath(os.path.join(BASE_DIR, "data/chromadb_site1_db"))
+)
+CHROMA_SITE_NAME = os.getenv("CHROMA_SITE_NAME", "site1")
+CHROMA_COLLECTION_TEMPLATE = os.getenv("CHROMA_COLLECTION_TEMPLATE", "{site}_{privacy}_privacy")
+DEFAULT_EMBEDDING_MODEL = os.getenv("DEFAULT_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+
+# Optional HTTP fallback (kept for compatibility)
 VECTOR_DB_API_URL = os.getenv("VECTOR_DB_API_URL", "http://127.0.0.1:8000")
 VECTOR_DB_QUERY_ENDPOINT = f"{VECTOR_DB_API_URL}/query"
 

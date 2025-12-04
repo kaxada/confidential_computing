@@ -12,14 +12,39 @@ DB_NAME="${DB_NAME:-confidential_rag}"
 
 echo "[deploy_hub] Using bundle: $TAR_PATH"
 
-# Install system dependencies (python, node, postgres)
-echo "[deploy_hub] Installing system dependencies"
-sudo apt-get update -y
-sudo apt-get install -y python3-venv python3-pip nodejs npm postgresql postgresql-contrib
+install_packages() {
+  if command -v apt-get >/dev/null 2>&1; then
+    echo "[deploy_hub] Detected apt-based system"
+    sudo apt-get update -y
+    sudo apt-get install -y python3-venv python3-pip nodejs npm postgresql postgresql-contrib
+  elif command -v yum >/dev/null 2>&1 || command -v dnf >/dev/null 2>&1; then
+    echo "[deploy_hub] Detected yum/dnf-based system (Amazon Linux/RHEL family)"
+    PM="yum"
+    command -v dnf >/dev/null 2>&1 && PM="dnf"
+    sudo ${PM} install -y python3 python3-pip python3-virtualenv nodejs npm postgresql postgresql-server
+    # Initialize Postgres if data dir not present (Amazon Linux/RHEL)
+    if [ ! -d "/var/lib/pgsql/data/base" ] && { command -v postgresql-setup >/dev/null 2>&1 || [ -x /usr/libexec/postgresql-setup ]; }; then
+      sudo postgresql-setup --initdb >/dev/null 2>&1 || sudo /usr/libexec/postgresql-setup --initdb >/dev/null 2>&1 || true
+    fi
+  else
+    echo "[deploy_hub] Unsupported package manager. Install python3, nodejs, and postgresql manually." >&2
+    exit 1
+  fi
+}
 
-# Ensure Postgres is running and configured
+ensure_postgres_running() {
+  local pg_service
+  pg_service=$(systemctl list-unit-files | awk '/postgresql.*\.service/{print $1}' | head -n1)
+  [ -z "$pg_service" ] && pg_service="postgresql.service"
+  echo "[deploy_hub] Using Postgres service: $pg_service"
+  sudo systemctl enable --now "$pg_service" || sudo systemctl start "$pg_service" || true
+}
+
+echo "[deploy_hub] Installing system dependencies"
+install_packages
+
 echo "[deploy_hub] Ensuring Postgres is running and database exists"
-sudo systemctl enable --now postgresql
+ensure_postgres_running
 sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='postgres';" | grep -q 1 || sudo -u postgres createuser postgres
 sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '${POSTGRES_PASSWORD}';" || true
 sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}';" | grep -q 1 || sudo -u postgres createdb "${DB_NAME}"

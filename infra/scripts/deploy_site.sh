@@ -9,10 +9,24 @@ VENV_DIR="$APP_DIR/venv-site"
 
 echo "[deploy_site] Using bundle: $TAR_PATH"
 
-# Install system dependencies
+install_packages() {
+  if command -v apt-get >/dev/null 2>&1; then
+    echo "[deploy_site] Detected apt-based system"
+    sudo apt-get update -y
+    sudo apt-get install -y python3-venv python3-pip
+  elif command -v yum >/dev/null 2>&1 || command -v dnf >/dev/null 2>&1; then
+    echo "[deploy_site] Detected yum/dnf-based system (Amazon Linux/RHEL family)"
+    PM="yum"
+    command -v dnf >/dev/null 2>&1 && PM="dnf"
+    sudo ${PM} install -y python3 python3-pip python3-virtualenv
+  else
+    echo "[deploy_site] Unsupported package manager. Install python3 manually." >&2
+    exit 1
+  fi
+}
+
 echo "[deploy_site] Installing system dependencies"
-sudo apt-get update -y
-sudo apt-get install -y python3-venv python3-pip
+install_packages
 
 sudo mkdir -p "$APP_DIR"
 sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"

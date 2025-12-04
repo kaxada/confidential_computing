@@ -11,6 +11,20 @@ from app.core.db import Base
 class Role(str, Enum):
     ADMIN = "admin"
     RESEARCHER = "researcher"
+    STUDENT = "student"
+    PI = "pi"
+
+    @classmethod
+    def from_str(cls, value: str) -> "Role":
+        """Parse a role string case-insensitively."""
+        if value is None:
+            raise ValueError("Role value is required")
+        return cls(value.strip().lower())
+
+
+def role_enum():
+    """Shared SQLAlchemy Enum config that stores the string values."""
+    return SAEnum(Role, name="role", values_callable=lambda enum: [e.value for e in enum])
 
 
 @dataclass
@@ -28,8 +42,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
-    requested_role = Column(SAEnum(Role), nullable=False, default=Role.RESEARCHER)
-    role = Column(SAEnum(Role), nullable=True)
+    requested_role = Column(role_enum(), nullable=False, default=Role.RESEARCHER)
+    role = Column(role_enum(), nullable=True)
     approved = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

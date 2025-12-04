@@ -23,6 +23,7 @@ class ChatRequest(BaseModel):
     question: str
     thread_id: Optional[int] = None
     title: Optional[str] = None
+    privacy_level: Optional[str] = None
 
 
 class ThreadResponse(BaseModel):

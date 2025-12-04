@@ -42,11 +42,15 @@ jobs:
           target: "/tmp"
 
       - name: Deploy on hub
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HUB_HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
+          envs: POSTGRES_PASSWORD,JWT_SECRET
           script: |
             tar -xzf /tmp/confidential_bundle.tgz -C /tmp infra/scripts/deploy_hub.sh
             bash /tmp/infra/scripts/deploy_hub.sh /tmp/confidential_bundle.tgz

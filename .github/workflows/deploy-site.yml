@@ -30,11 +30,14 @@ jobs:
           target: "/tmp"
 
       - name: Deploy on site
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SITE_HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
+          envs: OPENAI_API_KEY
           script: |
             tar -xzf /tmp/confidential_site_bundle.tgz -C /tmp infra/scripts/deploy_site.sh
             bash /tmp/infra/scripts/deploy_site.sh /tmp/confidential_site_bundle.tgz

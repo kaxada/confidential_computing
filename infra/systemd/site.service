@@ -6,7 +6,8 @@ After=network.target
 Type=simple
 User=ec2-user
 WorkingDirectory=/opt/confidential/site-node
-ExecStart=/bin/bash -lc 'source /opt/confidential/venv-site/bin/activate && python site_service.py'
+EnvironmentFile=-/opt/confidential/site-node/.env
+ExecStart=/bin/bash -lc 'source /opt/confidential/venv-site/bin/activate && uvicorn server:app --host 0.0.0.0 --port 8080'
 Restart=always
 
 [Install]

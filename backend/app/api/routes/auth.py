@@ -1,11 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.security import create_token, decode_token
+from app.core.security import create_token
 from app.core.db import get_session
 from app.models import Role, User
 from app.schemas import LoginRequest, SignupRequest
-from app.services.user import create_user, get_user_by_email, verify_credentials
+from app.services.user import (
+    create_user,
+    delete_user_and_threads,
+    get_user_by_email,
+    verify_credentials,
+)
+from app.api.deps.auth import require_approved
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -37,3 +43,23 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
         }
     )
     return {"token": token, "role": user.role.value if user.role else None}
+
+
+@router.get("/me")
+def me(user: User = Depends(require_approved)):
+    return {
+        "id": user.id,
+        "email": user.email,
+        "requested_role": user.requested_role.value,
+        "role": user.role.value if user.role else None,
+        "approved": bool(user.approved),
+        "created_at": user.created_at,
+    }
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(session: Session = Depends(get_session), user: User = Depends(require_approved)):
+    deleted = delete_user_and_threads(session, user.id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

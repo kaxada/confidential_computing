@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Role, User
+from app.models import ChatThread, Role, User
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
@@ -80,6 +80,19 @@ def delete_pending_user(session: Session, user_id: int) -> bool:
         return False
     if user.approved:
         return False
+    session.delete(user)
+    session.commit()
+    return True
+
+
+def delete_user_and_threads(session: Session, user_id: int) -> bool:
+    """Delete a user and their chat data."""
+    user = session.get(User, user_id)
+    if not user:
+        return False
+    threads = session.query(ChatThread).filter_by(user_id=user_id).all()
+    for t in threads:
+        session.delete(t)  # cascades to messages
     session.delete(user)
     session.commit()
     return True

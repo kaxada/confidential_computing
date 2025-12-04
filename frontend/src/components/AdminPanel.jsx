@@ -6,10 +6,13 @@ export default function AdminPanel({ user, onError }) {
   const [selectedId, setSelectedId] = useState('')
   const [role, setRole] = useState('researcher')
   const [status, setStatus] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const loadPending = async () => {
     if (!user?.token) return
     try {
+      setStatus('')
+      onError(null)
       const data = await api.pending(user.token)
       setPending(data)
       if (!data.find((p) => p.id === selectedId)) setSelectedId('')
@@ -24,23 +27,35 @@ export default function AdminPanel({ user, onError }) {
 
   const approve = async () => {
     try {
+      setBusy(true)
+      setStatus('')
+      onError(null)
       await api.approve({ user_id: Number(selectedId), role }, user.token)
       setSelectedId('')
       setStatus('User approved.')
       await loadPending()
     } catch (err) {
       onError(err.message)
+      setStatus('')
+    } finally {
+      setBusy(false)
     }
   }
 
   const remove = async () => {
     try {
+      setBusy(true)
+      setStatus('')
+      onError(null)
       await api.removePending(Number(selectedId), user.token)
       setSelectedId('')
       setStatus('Request deleted.')
       await loadPending()
     } catch (err) {
       onError(err.message)
+      setStatus('')
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -64,8 +79,8 @@ export default function AdminPanel({ user, onError }) {
           ))}
         </select>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <button className="primary" disabled={!selectedId} onClick={approve}>Approve</button>
-          <button className="ghost" disabled={!selectedId} onClick={remove}>Delete</button>
+          <button type="button" className="primary" disabled={!selectedId || busy} onClick={approve}>Approve</button>
+          <button type="button" className="ghost" disabled={!selectedId || busy} onClick={remove}>Delete</button>
         </div>
         {status && <div className="muted">{status}</div>}
       </div>

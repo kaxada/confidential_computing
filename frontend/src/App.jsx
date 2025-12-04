@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, API_BASE } from './api'
 import AuthView from './components/AuthView'
 import ChatView from './components/ChatView'
 import Sidebar from './components/Sidebar'
 import AdminPanel from './components/AdminPanel'
+import Profile from './components/Profile'
 
 export default function App() {
   const [user, setUser] = useState(null) // { email, role, token }
@@ -12,6 +13,8 @@ export default function App() {
   const [messages, setMessages] = useState([])
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [error, setError] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   const isAdmin = user?.role === 'admin'
 
@@ -53,6 +56,22 @@ export default function App() {
     }
   }, [activeThreadId, user?.token, isAdmin])
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.token) {
+        setProfile(null)
+        return
+      }
+      try {
+        const data = await api.me(user.token)
+        setProfile(data)
+      } catch (err) {
+        handleLogout()
+      }
+    }
+    fetchProfile()
+  }, [user?.token])
+
   const handleSend = async (text) => {
     if (!user?.token) return
     try {
@@ -87,12 +106,16 @@ export default function App() {
     setThreads([])
     setMessages([])
     setActiveThreadId(null)
+    setProfile(null)
   }
 
   return (
-    <div className="app">
+    <div className={`app ${isSidebarCollapsed ? 'collapsed' : ''}`}>
       <Sidebar
+        collapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         user={user}
+        profile={profile}
         showThreads={!isAdmin && !!user}
         threads={threads}
         activeThreadId={activeThreadId}
@@ -105,9 +128,23 @@ export default function App() {
           <div>
             <div className="eyebrow">Connected to {API_BASE}</div>
             <div className="title">Confidential Computing</div>
-            <div className="subtitle">Hub + Enclave backed (stubbed site)</div>
+            <div className="subtitle">Secure assistant</div>
           </div>
-          {user && <div className="pill">{user.email} · {user.role}</div>}
+          {user && (
+            <Profile
+              user={user}
+              profile={profile}
+              onLogout={handleLogout}
+              onDelete={async () => {
+                try {
+                  await api.deleteAccount(user.token)
+                  handleLogout()
+                } catch (err) {
+                  setError(err.message)
+                }
+              }}
+            />
+          )}
         </header>
 
         {!user && (
@@ -117,7 +154,7 @@ export default function App() {
         {user && isAdmin && <AdminPanel user={user} onError={setError} />}
 
         {user && !isAdmin && (
-          <div className="content-grid">
+          <div className="content-grid single">
             <ChatView
               messages={messages}
               loading={loadingMessages}

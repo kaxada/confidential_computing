@@ -11,6 +11,8 @@ from .db import Base
 class Role(str, Enum):
     ADMIN = "admin"
     RESEARCHER = "researcher"
+    STUDENT = "student"
+    PI = "pi"
 
 
 @dataclass

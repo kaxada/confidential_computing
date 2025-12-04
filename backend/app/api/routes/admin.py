@@ -22,7 +22,7 @@ def list_pending(session: Session = Depends(get_session), user: User = Depends(r
 @router.post("/approve")
 def approve(payload: ApproveRequest, session: Session = Depends(get_session), user: User = Depends(require_role(Role.ADMIN))):
     try:
-        role = Role(payload.role)
+        role = Role.from_str(payload.role)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
     updated = approve_user(session, payload.user_id, role)

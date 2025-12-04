@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def signup(payload: SignupRequest, session: Session = Depends(get_session)):
     requested_role = payload.requested_role or Role.RESEARCHER.value
     try:
-        role = Role(requested_role)
+        role = Role.from_str(requested_role)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
     if get_user_by_email(session, payload.email):

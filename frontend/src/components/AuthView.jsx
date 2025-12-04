@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { api } from '../api'
+import { useMemo, useState } from 'react'
+import { api, ROLE_OPTIONS } from '../api'
 
 export default function AuthView({ onLogin, onError }) {
   const [mode, setMode] = useState('login')
   const [form, setForm] = useState({ email: '', password: '', requested_role: 'researcher' })
   const [status, setStatus] = useState('')
+  const roleOptions = useMemo(() => ROLE_OPTIONS, [])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -41,7 +42,12 @@ export default function AuthView({ onLogin, onError }) {
         {mode === 'signup' && (
           <>
             <label className="label">Requested Role</label>
-            <input name="requested_role" value={form.requested_role} onChange={handleChange} />
+            <select name="requested_role" value={form.requested_role} onChange={handleChange}>
+              {roleOptions.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+            <div className="muted">Admin is reserved; others require approval.</div>
           </>
         )}
         <button type="submit" className="primary">{mode === 'signup' ? 'Create account' : 'Log in'}</button>

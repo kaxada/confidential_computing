@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from '../api'
+import { api, ROLE_OPTIONS } from '../api'
 
 export default function AdminPanel({ user, onError }) {
   const [pending, setPending] = useState([])
@@ -44,7 +44,11 @@ export default function AdminPanel({ user, onError }) {
       </div>
       <div className="stack">
         <label className="label">Role</label>
-        <input value={role} onChange={(e) => setRole(e.target.value)} />
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
+          {ROLE_OPTIONS.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
         <button className="primary" disabled={!selectedId} onClick={approve}>Approve</button>
       </div>
     </div>

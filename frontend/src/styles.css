@@ -70,6 +70,7 @@ body {
 .stack { display: grid; gap: 8px; }
 .label { color: var(--muted); font-size: 13px; }
 input { background: #0f1117; border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 10px; }
+select { background: #0f1117; border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 10px; }
 button.primary { background: var(--accent); color: #0c0e12; border: none; padding: 10px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; }
 button.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 10px; cursor: pointer; }
 .muted { color: var(--muted); font-size: 13px; }

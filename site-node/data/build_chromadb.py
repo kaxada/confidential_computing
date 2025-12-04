@@ -6,12 +6,13 @@ Improved ChromaDB Setup with Consistent PHI Handling
 Author: Dilip Thakur
 """
 
-import pandas as pd
+import os
+import re
+
 import numpy as np
+import pandas as pd
 from chromadb import PersistentClient
 from chromadb.utils import embedding_functions
-import re
-import os
 
 # ---------------------------
 # Differential Privacy Processor
@@ -203,8 +204,9 @@ def chunk_record_with_consistent_phi(record, privacy_level='none'):
 # ---------------------------
 def setup_consistent_chromadb():
     SITE_NAME = 'site1'
-    DB_PATH = './chromadb_site1_db'
-    CSV_PATH = '/mnt/user-data/uploads/site1_medical_data_large.csv'
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    DB_PATH = os.path.join(base_dir, 'chromadb_site1_db')
+    CSV_PATH = os.getenv('CHROMA_SOURCE_CSV', './site1_medical_data_large.csv')
     
     PRIVACY_LEVELS = {
         'none': float('inf'),

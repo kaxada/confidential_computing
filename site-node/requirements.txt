@@ -11,6 +11,8 @@ pandas
 langchain-text-splitters
 nltk
 requests>=2.31.0
+chromadb
+sentence-transformers
 
 # API Framework
 fastapi>=0.104.0

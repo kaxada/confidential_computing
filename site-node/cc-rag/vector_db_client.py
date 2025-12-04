@@ -113,14 +113,14 @@ class VectorDBClient:
         Returns:
             Formatted document dictionary
         """
-        # The vector DB returns documents with 'content', 'metadata', and 'distance'
-        # We need to extract and format these for the RAG pipeline
-        
+    # The vector DB returns documents with 'text', 'metadata', and 'distance'
+    # We need to extract and format these for the RAG pipeline
+    
         formatted = {
-            'content': doc.get('content', doc.get('document', '')),
+            'content': doc.get('text', doc.get('content', doc.get('document', ''))),  # Try multiple keys
             'metadata': doc.get('metadata', {}),
             'distance': doc.get('distance', None),
-            'id': doc.get('id', None)
+            'id': doc.get('id', doc.get('metadata', {}).get('patient_id'))
         }
         
         # Extract metadata fields for easier access
@@ -130,5 +130,8 @@ class VectorDBClient:
         formatted['topic_keywords'] = metadata.get('topic_keywords', [])
         formatted['session_id'] = metadata.get('session_id')
         formatted['kb_level'] = metadata.get('kb_level', 'KB1')
+        formatted['diagnosis_code'] = metadata.get('diagnosis_code')  # Added for healthcare
+        formatted['chunk_type'] = metadata.get('chunk_type')  # Added for healthcare
+        formatted['patient_id'] = metadata.get('patient_id')  # Added for healthcare
         
         return formatted

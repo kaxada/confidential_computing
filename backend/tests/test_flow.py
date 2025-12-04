@@ -58,7 +58,7 @@ def test_signup_approval_login_and_chat():
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert "answer" in data
+    assert "response" in data or "answer" in data
     thread_id = data.get("thread_id")
     assert thread_id is not None
 

@@ -24,14 +24,21 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
     }
   }, [menuRef])
 
+  const handleProfileClick = () => {
+    if (collapsed) {
+        onToggleCollapse()
+    } else {
+        setMenuOpen(!menuOpen)
+    }
+  }
+
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
         {!collapsed && <div className="logo-text">Confidential Computing</div>}
         <button className="icon-btn" onClick={onToggleCollapse} aria-label="Toggle sidebar">
           <Icon>
-            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M9 3V21" stroke="currentColor" strokeWidth="1.5" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 4.5v15m6-15v15m-10.5-15h15a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25v-10.5a2.25 2.25 0 012.25-2.25z" stroke="currentColor" />
           </Icon>
         </button>
       </div>
@@ -51,30 +58,28 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
           </div>
           
           {!collapsed && <div className="section-label">Your chats</div>}
-          <div className="thread-list">
-            {threads.map((t) => (
-              <button
-                key={t.id}
-                className={`thread-link ${activeThreadId === t.id ? 'active' : ''}`}
-                onClick={() => onSelectThread(t.id)}
-                title={t.title || `Conversation ${t.id}`}
-              >
-                {!collapsed ? (
+          {!collapsed && (
+            <div className="thread-list">
+                {threads.map((t) => (
+                <button
+                    key={t.id}
+                    className={`thread-link ${activeThreadId === t.id ? 'active' : ''}`}
+                    onClick={() => onSelectThread(t.id)}
+                    title={t.title || `Conversation ${t.id}`}
+                >
                     <span className="thread-title">{t.title || `Conversation ${t.id}`}</span>
-                ) : (
-                    <span className="thread-dot"></span>
-                )}
-              </button>
-            ))}
-            {!threads.length && !collapsed && <div className="muted small" style={{paddingLeft: 10}}>No conversations.</div>}
-          </div>
+                </button>
+                ))}
+                {!threads.length && <div className="muted small" style={{paddingLeft: 10}}>No conversations.</div>}
+            </div>
+          )}
         </>
       ) : (
         <div className="muted">{!collapsed && 'Admin panel'}</div>
       )}
       {user && (
         <div className="sidebar-footer" ref={menuRef}>
-          {menuOpen && (
+          {menuOpen && !collapsed && (
             <div className="user-menu">
                <div className="menu-item info">
                   <div className="menu-email">{user.email}</div>
@@ -85,7 +90,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                <button className="menu-item danger" onClick={onDelete}>Delete account</button>
             </div>
           )}
-          <button className={`profile-btn ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(!menuOpen)} title="User menu">
+          <button className={`profile-btn ${menuOpen ? 'active' : ''}`} onClick={handleProfileClick} title="User menu">
             <div className="avatar small">{user.name?.[0]?.toUpperCase() || 'U'}</div>
             {!collapsed && <div className="user-info">
                 <div className="user-name">{user.name || user.email}</div>

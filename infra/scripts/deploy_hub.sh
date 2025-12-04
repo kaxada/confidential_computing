@@ -22,7 +22,6 @@ install_packages() {
     PM="yum"
     command -v dnf >/dev/null 2>&1 && PM="dnf"
     sudo ${PM} install -y python3 python3-pip python3-virtualenv nodejs npm postgresql postgresql-server
-    # Initialize Postgres if data dir not present (Amazon Linux/RHEL)
     if [ ! -d "/var/lib/pgsql/data/base" ] && { command -v postgresql-setup >/dev/null 2>&1 || [ -x /usr/libexec/postgresql-setup ]; }; then
       sudo postgresql-setup --initdb >/dev/null 2>&1 || sudo /usr/libexec/postgresql-setup --initdb >/dev/null 2>&1 || true
     fi

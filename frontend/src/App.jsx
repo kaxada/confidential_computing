@@ -16,7 +16,25 @@ export default function App() {
   const [profile, setProfile] = useState(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
+  const SESSION_DURATION = 60 * 1000 // 1 minute
+
   const isAdmin = user?.role === 'admin'
+
+  useEffect(() => {
+    const stored = localStorage.getItem('cc_session')
+    if (stored) {
+      try {
+        const { user: savedUser, timestamp } = JSON.parse(stored)
+        if (Date.now() - timestamp < SESSION_DURATION) {
+          setUser(savedUser)
+        } else {
+          localStorage.removeItem('cc_session')
+        }
+      } catch (e) {
+        localStorage.removeItem('cc_session')
+      }
+    }
+  }, [])
 
   const loadThreads = async (token) => {
     if (!token || isAdmin) return
@@ -94,7 +112,9 @@ export default function App() {
   }
 
   const handleLogin = (creds, token, role) => {
-    setUser({ email: creds.email, name: creds.name || creds.email, role, token })
+    const userData = { email: creds.email, name: creds.name || creds.email, role, token }
+    setUser(userData)
+    localStorage.setItem('cc_session', JSON.stringify({ user: userData, timestamp: Date.now() }))
     setThreads([])
     setMessages([])
     setActiveThreadId(null)
@@ -102,6 +122,7 @@ export default function App() {
   }
 
   const handleLogout = () => {
+    localStorage.removeItem('cc_session')
     setUser(null)
     setThreads([])
     setMessages([])

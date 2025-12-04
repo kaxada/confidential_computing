@@ -27,7 +27,7 @@ function MessageRow({ role, content }) {
   )
 }
 
-export default function ChatView({ messages, loading, onSend, disabled }) {
+export default function ChatView({ messages, loading, onSend, disabled, user }) {
   const [text, setText] = useState('')
   const textareaRef = useRef(null)
   const scrollRef = useRef(null)
@@ -66,7 +66,7 @@ export default function ChatView({ messages, loading, onSend, disabled }) {
       <div className="chat-scroll-area" ref={scrollRef}>
         {isEmpty ? (
           <div className="empty-state">
-            <div className="empty-text">Ready when you are.</div>
+            <div className="empty-text">Hello, {user?.name || user?.email || 'User'}</div>
           </div>
         ) : (
           <div className="messages-list">
@@ -89,39 +89,24 @@ export default function ChatView({ messages, loading, onSend, disabled }) {
         )}
       </div>
 
-      {/* Input Area - centered if empty, bottom if not. 
-          Actually, in the CSS I made .empty-state take height. 
-          To achieve the visual of input in middle for empty state, 
-          we can move this block inside empty-state conditionally, 
-          OR use CSS to position it. 
-          For now, I'll keep it fixed at bottom to ensure consistent UX 
-          as user starts typing, matching typical behavior. 
-          The user's screenshot shows it in the middle, so let's try to support that visually.
-      */}
       <div className="input-area-wrapper" style={isEmpty ? { position: 'absolute', top: '50%', transform: 'translateY(-50%)', background: 'transparent', bottom: 'auto' } : {}}>
         <form className="input-container" onSubmit={handleSend}>
-          <button type="button" className="input-btn" title="Attachments">
-             <Icon path="M12 4.5v15m7.5-7.5h-15" />
-          </button>
           <textarea
             ref={textareaRef}
             className="chat-input-field"
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything"
+            placeholder="Type your query here"
             disabled={disabled}
             rows={1}
+            autoFocus
           />
-          {text.trim() ? (
+          {text.trim() && (
              <button type="submit" className="input-btn send-btn" disabled={disabled || !text.trim()}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-             </button>
-          ) : (
-             <button type="button" className="input-btn" title="Voice Mode">
-                <Icon path="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
              </button>
           )}
         </form>

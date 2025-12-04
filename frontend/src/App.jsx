@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, API_BASE } from './api'
+import { api } from './api'
 import AuthView from './components/AuthView'
 import ChatView from './components/ChatView'
 import Sidebar from './components/Sidebar'
@@ -125,11 +125,6 @@ export default function App() {
       />
       <main className="main">
         <header className="topbar">
-          <div>
-            <div className="eyebrow">Connected to {API_BASE}</div>
-            <div className="title">Confidential Computing</div>
-            <div className="subtitle">Secure assistant</div>
-          </div>
           {user && (
             <Profile
               user={user}
@@ -160,6 +155,7 @@ export default function App() {
               loading={loadingMessages}
               onSend={handleSend}
               disabled={!user}
+              user={user}
             />
           </div>
         )}

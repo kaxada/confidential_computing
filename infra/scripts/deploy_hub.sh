@@ -26,7 +26,7 @@ echo "[deploy_hub] Installing PostgreSQL 15"
 
 sudo dnf install -y postgresql15 postgresql15-server
 
-if [ ! -d "/var/lib/pgsql/data" ]; then
+if ! sudo test -f "/var/lib/pgsql/data/PG_VERSION"; then
     echo "[deploy_hub] Initializing PostgreSQL database"
     sudo postgresql-setup --initdb
 fi

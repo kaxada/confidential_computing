@@ -23,6 +23,7 @@ export const api = {
   login: (payload) => request('/auth/login', { method: 'POST', body: payload }),
   pending: (token) => request('/admin/pending', { token }),
   approve: (payload, token) => request('/admin/approve', { method: 'POST', body: payload, token }),
+  removePending: (userId, token) => request(`/admin/pending/${userId}`, { method: 'DELETE', token }),
   chat: (payload, token) => request('/chat/query', { method: 'POST', body: payload, token }),
   threads: (token) => request('/chat/threads', { token }),
   messages: (threadId, token) => request(`/chat/threads/${threadId}/messages`, { token }),

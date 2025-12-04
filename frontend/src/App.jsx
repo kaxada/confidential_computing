@@ -16,7 +16,7 @@ export default function App() {
   const isAdmin = user?.role === 'admin'
 
   const loadThreads = async (token) => {
-    if (!token) return
+    if (!token || isAdmin) return
     try {
       const data = await api.threads(token)
       setThreads(data)
@@ -42,16 +42,16 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (user?.token) {
+    if (user?.token && !isAdmin) {
       loadThreads(user.token)
     }
-  }, [user?.token])
+  }, [user?.token, isAdmin])
 
   useEffect(() => {
-    if (activeThreadId && user?.token) {
+    if (activeThreadId && user?.token && !isAdmin) {
       loadMessages(activeThreadId, user.token)
     }
-  }, [activeThreadId, user?.token])
+  }, [activeThreadId, user?.token, isAdmin])
 
   const handleSend = async (text) => {
     if (!user?.token) return
@@ -75,7 +75,7 @@ export default function App() {
   }
 
   const handleLogin = (creds, token, role) => {
-    setUser({ email: creds.email, role, token })
+    setUser({ email: creds.email, name: creds.name || creds.email, role, token })
     setThreads([])
     setMessages([])
     setActiveThreadId(null)
@@ -93,6 +93,7 @@ export default function App() {
     <div className="app">
       <Sidebar
         user={user}
+        showThreads={!isAdmin && !!user}
         threads={threads}
         activeThreadId={activeThreadId}
         onSelectThread={setActiveThreadId}
@@ -113,7 +114,9 @@ export default function App() {
           <AuthView onLogin={handleLogin} onError={setError} />
         )}
 
-        {user && (
+        {user && isAdmin && <AdminPanel user={user} onError={setError} />}
+
+        {user && !isAdmin && (
           <div className="content-grid">
             <ChatView
               messages={messages}
@@ -121,7 +124,6 @@ export default function App() {
               onSend={handleSend}
               disabled={!user}
             />
-            {isAdmin && <AdminPanel user={user} onError={setError} />}
           </div>
         )}
 

@@ -71,3 +71,15 @@ def approve_user(session: Session, user_id: int, role: Role) -> Optional[User]:
     session.commit()
     session.refresh(user)
     return user
+
+
+def delete_pending_user(session: Session, user_id: int) -> bool:
+    """Delete a user that has not been approved yet."""
+    user = session.get(User, user_id)
+    if not user:
+        return False
+    if user.approved:
+        return False
+    session.delete(user)
+    session.commit()
+    return True

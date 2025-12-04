@@ -5,7 +5,7 @@ from app.api.deps.auth import require_role
 from app.core.db import get_session
 from app.models import Role, User
 from app.schemas import ApproveRequest
-from app.services.user import approve_user, list_pending_users
+from app.services.user import approve_user, delete_pending_user, list_pending_users
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -29,3 +29,11 @@ def approve(payload: ApproveRequest, session: Session = Depends(get_session), us
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return {"status": "approved", "role": updated.role.value}
+
+
+@router.delete("/pending/{user_id}")
+def delete_pending(user_id: int, session: Session = Depends(get_session), user: User = Depends(require_role(Role.ADMIN))):
+    deleted = delete_pending_user(session, user_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found or already approved")
+    return {"status": "deleted"}

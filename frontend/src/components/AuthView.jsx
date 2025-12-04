@@ -3,7 +3,7 @@ import { api, ROLE_OPTIONS } from '../api'
 
 export default function AuthView({ onLogin, onError }) {
   const [mode, setMode] = useState('login')
-  const [form, setForm] = useState({ email: '', password: '', requested_role: 'researcher' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', requested_role: 'researcher' })
   const [status, setStatus] = useState('')
   const roleOptions = useMemo(() => ROLE_OPTIONS, [])
 
@@ -21,7 +21,7 @@ export default function AuthView({ onLogin, onError }) {
         setStatus('Account created. Pending admin approval.')
       } else {
         const res = await api.login({ email: form.email, password: form.password })
-        onLogin({ email: form.email }, res.token, res.role)
+        onLogin({ email: form.email, name: form.name || form.email }, res.token, res.role)
       }
     } catch (err) {
       onError(err.message)
@@ -35,6 +35,8 @@ export default function AuthView({ onLogin, onError }) {
         <button className={mode === 'signup' ? 'active' : ''} onClick={() => setMode('signup')}>Sign up</button>
       </div>
       <form onSubmit={submit} className="stack">
+        <label className="label">Name</label>
+        <input name="name" value={form.name} onChange={handleChange} placeholder="Your name" required />
         <label className="label">Email</label>
         <input name="email" type="email" value={form.email} onChange={handleChange} required />
         <label className="label">Password</label>

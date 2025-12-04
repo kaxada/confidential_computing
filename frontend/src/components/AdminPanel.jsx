@@ -5,12 +5,14 @@ export default function AdminPanel({ user, onError }) {
   const [pending, setPending] = useState([])
   const [selectedId, setSelectedId] = useState('')
   const [role, setRole] = useState('researcher')
+  const [status, setStatus] = useState('')
 
   const loadPending = async () => {
     if (!user?.token) return
     try {
       const data = await api.pending(user.token)
       setPending(data)
+      if (!data.find((p) => p.id === selectedId)) setSelectedId('')
     } catch (err) {
       onError(err.message)
     }
@@ -24,6 +26,18 @@ export default function AdminPanel({ user, onError }) {
     try {
       await api.approve({ user_id: Number(selectedId), role }, user.token)
       setSelectedId('')
+      setStatus('User approved.')
+      await loadPending()
+    } catch (err) {
+      onError(err.message)
+    }
+  }
+
+  const remove = async () => {
+    try {
+      await api.removePending(Number(selectedId), user.token)
+      setSelectedId('')
+      setStatus('Request deleted.')
       await loadPending()
     } catch (err) {
       onError(err.message)
@@ -33,7 +47,7 @@ export default function AdminPanel({ user, onError }) {
   return (
     <div className="admin-card">
       <div className="card-title">Admin</div>
-      <div className="muted">Approve users</div>
+      <div className="muted">Manage pending users</div>
       <div className="pending-list">
         {pending.map((p) => (
           <button key={p.id} className={selectedId == p.id ? 'pending active' : 'pending'} onClick={() => setSelectedId(p.id)}>
@@ -49,7 +63,11 @@ export default function AdminPanel({ user, onError }) {
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
-        <button className="primary" disabled={!selectedId} onClick={approve}>Approve</button>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <button className="primary" disabled={!selectedId} onClick={approve}>Approve</button>
+          <button className="ghost" disabled={!selectedId} onClick={remove}>Delete</button>
+        </div>
+        {status && <div className="muted">{status}</div>}
       </div>
     </div>
   )

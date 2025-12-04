@@ -38,6 +38,8 @@ sudo systemctl enable --now postgresql || sudo systemctl start postgresql
 # ----------------------------
 echo "[deploy_hub] Ensuring Postgres is running and database exists"
 
+cd /
+
 sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '${POSTGRES_PASSWORD}';" || true
 
 sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}';" | grep -q 1 \
@@ -47,9 +49,9 @@ sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}';
 # Deploy bundle
 # ----------------------------
 sudo mkdir -p "$APP_DIR"
-sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
 
 sudo tar -xzf "$TAR_PATH" -C "$APP_DIR" --strip-components=0
+sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
 
 # ----------------------------
 # Python virtual environment

@@ -29,8 +29,8 @@ echo "[deploy_site] Installing system dependencies"
 install_packages
 
 sudo mkdir -p "$APP_DIR"
-sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
 sudo tar -xzf "$TAR_PATH" -C "$APP_DIR" --strip-components=0
+sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
 
 python3 -m venv "$VENV_DIR"
 source "$VENV_DIR/bin/activate"

@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""
+ChromaDB Setup for Site1 (New Chroma Client)
+- Preserves original chunking + differential privacy
+- Uses new PersistentClient API
+Author: Dilip Thakur
+"""
+
+import pandas as pd
+import numpy as np
+from chromadb import PersistentClient
+from chromadb.utils import embedding_functions
+import re
+import os
+
+# ---------------------------
+# Differential Privacy
+# ---------------------------
+class DifferentialPrivacyProcessor:
+    def __init__(self, epsilon: float = 1.0):
+        self.epsilon = epsilon
+        self.sensitivity = 1.0
+
+    def generalize_age(self, age: int, level: str = 'moderate') -> str:
+        if level == 'none': return str(age)
+        elif level == 'low': lower = (age // 5) * 5; return f"{lower}-{lower+4}"
+        elif level == 'moderate': lower = (age // 10) * 10; return f"{lower}-{lower+9}"
+        else: lower = (age // 20) * 20; return f"{lower}-{lower+19}"
+
+    def redact_phi(self, text: str, phi_elements: str, privacy_level: str) -> str:
+        if privacy_level == 'none': return text
+        phi_items = {}
+        if phi_elements and '|' in phi_elements:
+            for item in phi_elements.split('|'):
+                if ':' in item:
+                    k,v = item.split(':',1)
+                    phi_items[k]=v
+        redacted_text = text
+        if privacy_level=='high':
+            for k,v in phi_items.items():
+                if k=='name': redacted_text = redacted_text.replace(v,'[NAME_REDACTED]')
+                elif k=='ssn': redacted_text = redacted_text.replace(v,'[SSN_REDACTED]')
+                elif k=='dob': redacted_text = redacted_text.replace(v,'[DOB_REDACTED]')
+                elif k=='phone': redacted_text = redacted_text.replace(v,'[PHONE_REDACTED]')
+                elif k=='address': redacted_text = redacted_text.replace(v,'[ADDRESS_REDACTED]')
+                elif k=='email': redacted_text = redacted_text.replace(v,'[EMAIL_REDACTED]')
+        elif privacy_level=='moderate':
+            for k,v in phi_items.items():
+                if k=='name' and v:
+                    parts=v.split(); masked=f"{parts[0][0]}*** {parts[-1][0]}***" if len(parts)>=2 else v
+                    redacted_text = redacted_text.replace(v,masked)
+                elif k=='ssn' and v: redacted_text = redacted_text.replace(v,f"XXX-XX-{v[-4:]}")
+                elif k=='phone' and v and len(v)>=10: redacted_text=redacted_text.replace(v,f"{v[:3]}-XXX-XXXX")
+                elif k=='email' and v and '@' in v: redacted_text = redacted_text.replace(v,f"***@{v.split('@')[1]}")
+        elif privacy_level=='low':
+            for k,v in phi_items.items():
+                if k=='ssn' and v and len(v)>=11: redacted_text = redacted_text.replace(v,f"{v[:3]}-XX-{v[-4:]}")
+                elif k=='email' and v and '@' in v:
+                    local, domain = v.split('@')
+                    if len(local)>2: masked=f"{local[:2]}***@{domain}"; redacted_text = redacted_text.replace(v,masked)
+        return redacted_text
+
+# ---------------------------
+# Site1 Database Setup
+# ---------------------------
+SITE_NAME = 'site1'
+SITE_TYPE = 'general'
+DB_PATH = './chromadb_site1_db'  # folder where PersistentClient stores DB
+CSV_PATH = '/mnt/user-data/uploads/site1_medical_data_large.csv'
+
+PRIVACY_LEVELS = {
+    'none': float('inf'),
+    'low': 10.0,
+    'moderate': 1.0,
+    'high': 0.1
+}
+
+# ---------------------------
+# Chroma Client + Embeddings
+# ---------------------------
+print("🚀 Loading embedding model...")
+embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"
+)
+client = PersistentClient(path=DB_PATH)
+
+# ---------------------------
+# Create collections
+# ---------------------------
+collections = {}
+for level, epsilon in PRIVACY_LEVELS.items():
+    col_name = f"{SITE_NAME}_{level}_privacy"
+    try:
+        client.delete_collection(name=col_name)
+        print(f"Deleted existing collection {col_name}")
+    except:
+        pass
+    collections[level] = client.create_collection(
+        name=col_name,
+        embedding_function=embedding_fn,
+        metadata={"site_name": SITE_NAME, "privacy_level": level, "epsilon": str(epsilon)}
+    )
+    print(f"Created collection {col_name} (ε={epsilon})")
+
+# ---------------------------
+# Load CSV
+# ---------------------------
+print(f"📂 Loading CSV: {CSV_PATH}")
+df = pd.read_csv(CSV_PATH)
+print(f"Loaded {len(df)} rows.")
+
+# ---------------------------
+# Chunking & Ingestion
+# ---------------------------
+def chunk_record(record):
+    chunks=[]
+    pid = record['patient_id']
+    # Demographics + Diagnosis
+    demo_chunk = {
+        'text': f"Patient {pid} is a {record['age']} year old {record['gender']}. Diagnosis: {record['diagnosis_description']} (ICD-10: {record['diagnosis_code']}). Chief complaint: {record['chief_complaint']}.",
+        'metadata': {'patient_id': pid,'chunk_type':'demographics','diagnosis_code':record['diagnosis_code']}
+    }
+    chunks.append(demo_chunk)
+    # Lab
+    if pd.notna(record.get('lab_test')):
+        lab_chunk={'text':f"Lab results for patient {pid}: {record['lab_test']}: {record['lab_value']} {record.get('lab_unit','')}.",
+                   'metadata':{'patient_id':pid,'chunk_type':'lab_results','lab_test':record['lab_test']}}
+        chunks.append(lab_chunk)
+    # Medications
+    if pd.notna(record.get('medication')):
+        med_chunk={'text':f"Patient {pid} prescribed: {record['medication']}. Provider: {record.get('provider_name','Unknown')} at {record.get('facility_name','Unknown')}.",
+                   'metadata':{'patient_id':pid,'chunk_type':'medications','provider':record.get('provider_name','Unknown')}}
+        chunks.append(med_chunk)
+    # Notes
+    if pd.notna(record.get('notes')):
+        notes_chunk={'text':record['notes'],'metadata':{'patient_id':pid,'chunk_type':'clinical_notes'}}
+        chunks.append(notes_chunk)
+    return chunks
+
+print("📥 Processing and storing records...")
+for level, col in collections.items():
+    dp = DifferentialPrivacyProcessor(epsilon=PRIVACY_LEVELS[level])
+    docs, metas, ids = [], [], []
+    for idx, record in df.iterrows():
+        chunks = chunk_record(record)
+        for i, chunk in enumerate(chunks):
+            # Apply DP: redact PHI
+            if 'phi_elements' in record and pd.notna(record['phi_elements']):
+                chunk['text'] = dp.redact_phi(chunk['text'], record['phi_elements'], level)
+            # Generalize age
+            if 'age' in record and pd.notna(record['age']):
+                age_range = dp.generalize_age(int(record['age']), level)
+                chunk['text'] = re.sub(f"{int(record['age'])} year old", f"{age_range} year old", chunk['text'])
+            docs.append(chunk['text'])
+            metas.append(chunk['metadata'])
+            ids.append(f"{record['patient_id']}_{i}_{level}")
+        # Batch insert every 100
+        if len(docs)>=100:
+            col.add(documents=docs, metadatas=metas, ids=ids)
+            docs, metas, ids=[], [], []
+    # Insert remaining
+    if docs:
+        col.add(documents=docs, metadatas=metas, ids=ids)
+    print(f"Stored {col.count()} chunks in {col.name}")
+
+# ---------------------------
+# Simple verification query
+# ---------------------------
+query_text="sleep issues"
+print("\n🔍 Sample query verification:")
+res = collections['moderate'].query(query_texts=[query_text], n_results=2)
+for i, doc in enumerate(res['documents'][0]):
+    print(f"\nResult {i+1}:\n{doc[:300]}...")

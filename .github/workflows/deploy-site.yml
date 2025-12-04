@@ -1,7 +1,32 @@
+name: Deploy Site Node
+
+on:
+  push:
+    paths:
+      - "site-node/**"
+      - "infra/**"
+      - ".github/workflows/deploy-site.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: confidential_computing
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Create deployment bundle
         run: |
-          tar czf confidential_site_bundle_${{ github.run_id }}.tgz \
+          # Create bundle in current workspace so scp-action can see it
+          tar czf confidential_site_bundle.tgz \
             site-node infra
+
+      - name: Clean up remote bundle
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SITE_HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: rm -f /tmp/confidential_site_bundle.tgz
 
       - name: Copy bundle to site
         uses: appleboy/scp-action@v0.1.7
@@ -9,7 +34,7 @@
           host: ${{ secrets.SITE_HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "confidential_site_bundle_${{ github.run_id }}.tgz"
+          source: "confidential_site_bundle.tgz"
           target: "/tmp"
 
       - name: Deploy on site
@@ -22,7 +47,5 @@
           key: ${{ secrets.SSH_KEY }}
           envs: OPENAI_API_KEY
           script: |
-            BUNDLE="/tmp/confidential_site_bundle_${{ github.run_id }}.tgz"
-            tar -xzf $BUNDLE -C /tmp infra/scripts/deploy_site.sh
-            bash /tmp/infra/scripts/deploy_site.sh $BUNDLE
-            rm $BUNDLE # Clean up after success
+            tar -xzf /tmp/confidential_site_bundle.tgz -C /tmp infra/scripts/deploy_site.sh
+            bash /tmp/infra/scripts/deploy_site.sh /tmp/confidential_site_bundle.tgz

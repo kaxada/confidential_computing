@@ -29,6 +29,13 @@ def chat_query(payload: ChatRequest, user: User = Depends(require_approved), ses
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Question required")
     thread = get_or_create_thread(session, user_id=user.id, thread_id=payload.thread_id, title=payload.title)
     add_message(session, thread, user_id=user.id, role="user", content=payload.question)
-    result = send_query(question=payload.question, role=user.role.value if user.role else "", user_id=user.id)
-    add_message(session, thread, user_id=user.id, role="assistant", content=result.get("answer", ""))
+    role_for_site = user.role.value if user.role else "student"
+    result = send_query(
+        question=payload.question,
+        role=role_for_site,
+        user_id=user.id,
+        privacy_level=payload.privacy_level,
+    )
+    assistant_msg = result.get("response") or result.get("answer") or ""
+    add_message(session, thread, user_id=user.id, role="assistant", content=assistant_msg)
     return {**result, "thread_id": thread.id}

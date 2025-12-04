@@ -1,3 +1,5 @@
+import { useState, useEffect, useRef } from 'react'
+
 function Icon({ children }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon">
@@ -6,7 +8,22 @@ function Icon({ children }) {
   )
 }
 
-export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout }) {
+export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [menuRef])
+
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
@@ -33,7 +50,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
             </button>
           </div>
           
-          {!collapsed && <div className="section-label">Your Queries</div>}
+          {!collapsed && <div className="section-label">Your chats</div>}
           <div className="thread-list">
             {threads.map((t) => (
               <button
@@ -56,8 +73,19 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
         <div className="muted">{!collapsed && 'Admin panel'}</div>
       )}
       {user && (
-        <div className="sidebar-footer">
-          <button className="profile-btn" onClick={onLogout} title="Log out">
+        <div className="sidebar-footer" ref={menuRef}>
+          {menuOpen && (
+            <div className="user-menu">
+               <div className="menu-item info">
+                  <div className="menu-email">{user.email}</div>
+                  {profile?.role && <div className="menu-role">{profile.role}</div>}
+               </div>
+               <div className="menu-divider"></div>
+               <button className="menu-item" onClick={onLogout}>Log out</button>
+               <button className="menu-item danger" onClick={onDelete}>Delete account</button>
+            </div>
+          )}
+          <button className={`profile-btn ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(!menuOpen)} title="User menu">
             <div className="avatar small">{user.name?.[0]?.toUpperCase() || 'U'}</div>
             {!collapsed && <div className="user-info">
                 <div className="user-name">{user.name || user.email}</div>

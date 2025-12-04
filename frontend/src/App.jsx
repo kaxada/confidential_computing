@@ -130,6 +130,15 @@ export default function App() {
     setProfile(null)
   }
 
+  const handleDeleteAccount = async () => {
+    try {
+      await api.deleteAccount(user.token)
+      handleLogout()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   return (
     <div className={`app ${isSidebarCollapsed ? 'collapsed' : ''}`}>
       <Sidebar
@@ -143,26 +152,9 @@ export default function App() {
         onSelectThread={setActiveThreadId}
         onNewChat={handleNewChat}
         onLogout={handleLogout}
+        onDelete={handleDeleteAccount}
       />
       <main className="main">
-        <header className="topbar">
-          {user && (
-            <Profile
-              user={user}
-              profile={profile}
-              onLogout={handleLogout}
-              onDelete={async () => {
-                try {
-                  await api.deleteAccount(user.token)
-                  handleLogout()
-                } catch (err) {
-                  setError(err.message)
-                }
-              }}
-            />
-          )}
-        </header>
-
         {!user && (
           <AuthView onLogin={handleLogin} onError={setError} />
         )}

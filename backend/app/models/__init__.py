@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -36,6 +37,7 @@ class UserDTO:
     requested_role: Role
     role: Optional[Role]
     approved: bool
+    role_expires_at: Optional[datetime] = None
 
 
 class User(Base):
@@ -48,10 +50,25 @@ class User(Base):
     last_name = Column(String(255), nullable=True)
     requested_role = Column(role_enum(), nullable=False, default=Role.RESEARCHER)
     role = Column(role_enum(), nullable=True)
+    role_expires_at = Column(DateTime(timezone=True), nullable=True)
+    request_reason = Column(Text, nullable=True)
     approved = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     threads = relationship("ChatThread", back_populates="user")
+    logs = relationship("UserLog", back_populates="user", cascade="all, delete-orphan")
+
+
+class UserLog(Base):
+    __tablename__ = "user_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    event = Column(String(50), nullable=False)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="logs")
 
 
 class ChatThread(Base):

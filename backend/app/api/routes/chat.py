@@ -14,6 +14,7 @@ from app.services.chat import (
     list_threads,
     update_thread,
 )
+from app.services.log import log_event
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -70,6 +71,9 @@ def chat_query(payload: ChatRequest, user: User = Depends(require_approved), ses
         user_id=user.id,
         privacy_level=payload.privacy_level,
     )
+    
+    log_event(session, user.id, "chat_query", {"site_id": result.get("site_id"), "privacy": payload.privacy_level})
+
     assistant_msg = result.get("response") or result.get("answer") or ""
     add_message(session, thread, user_id=user.id, role="assistant", content=assistant_msg)
 

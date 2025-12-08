@@ -117,7 +117,7 @@ function ThreadItem({ thread, active, onSelect, onRename, onDelete }) {
   )
 }
 
-export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread }) {
+export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestRole }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -195,8 +195,14 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                     {(user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}` : user.email}
                   </div>
                   {profile?.role && <div className="menu-role">{profile.role}</div>}
+                  {profile?.role_expires_at && (
+                      <div className="menu-role" style={{fontSize: '11px', color: 'var(--accent)'}}>
+                          Expires: {new Date(profile.role_expires_at).toLocaleDateString()}
+                      </div>
+                  )}
                </div>
                <div className="menu-divider"></div>
+               <button className="menu-item" onClick={onRequestRole}>Request Role Change</button>
                <button className="menu-item" onClick={onLogout}>Log out</button>
                <button className="menu-item danger" onClick={onDelete}>Delete account</button>
             </div>

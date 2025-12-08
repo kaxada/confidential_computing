@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api } from './api'
+import { api, ROLE_OPTIONS } from './api'
 import AuthView from './components/AuthView'
 import ChatView from './components/ChatView'
 import Sidebar from './components/Sidebar'
@@ -17,6 +17,10 @@ export default function App() {
   const [error, setError] = useState(null)
   const [profile, setProfile] = useState(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  
+  const [showRoleModal, setShowRoleModal] = useState(false)
+  const [requestRole, setRequestRole] = useState(ROLE_OPTIONS[0])
+  const [requestReason, setRequestReason] = useState('')
 
   const SESSION_DURATION = 60 * 1000 // 1 minute
 
@@ -152,7 +156,8 @@ export default function App() {
     setError(null)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await api.logout(user?.token) } catch(e) {}
     localStorage.removeItem('cc_session')
     setUser(null)
     setThreads([])
@@ -191,6 +196,18 @@ export default function App() {
     }
   }
 
+  const handleRequestRoleChange = async () => {
+      if (!user?.token) return
+      try {
+          await api.requestRole(requestRole, requestReason, user.token)
+          setShowRoleModal(false)
+          setRequestReason('')
+          alert("Role request submitted.")
+      } catch (e) {
+          setError(e.message)
+      }
+  }
+
   return (
     <div className={`app ${isSidebarCollapsed ? 'collapsed' : ''}`}>
       <Sidebar
@@ -207,6 +224,7 @@ export default function App() {
         onDelete={handleDeleteAccount}
         onRenameThread={handleRenameThread}
         onDeleteThread={handleDeleteThread}
+        onRequestRole={() => setShowRoleModal(true)}
       />
       <main className="main">
         {!user && (
@@ -228,6 +246,33 @@ export default function App() {
               threadId={activeThreadId}
             />
           </div>
+        )}
+
+        {showRoleModal && (
+            <div className="auth-container" style={{zIndex: 200, background: 'rgba(0,0,0,0.5)'}}>
+                <div className="auth-card-modern" style={{maxWidth: 400}}>
+                    <h3 className="auth-title" style={{fontSize: 20}}>Request Role Change</h3>
+                    <div className="input-group">
+                        <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>New Role</label>
+                        <select value={requestRole} onChange={e => setRequestRole(e.target.value)} className="auth-input">
+                            {ROLE_OPTIONS.filter(r => r !== 'admin').map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                        </select>
+                    </div>
+                    <div className="input-group" style={{marginTop: 10}}>
+                        <textarea 
+                            value={requestReason} 
+                            onChange={e => setRequestReason(e.target.value)} 
+                            placeholder="Reason for request..."
+                            className="auth-input"
+                            rows={3}
+                        />
+                    </div>
+                    <div className="auth-actions" style={{marginTop: 20, gap: 10, justifyContent: 'flex-end'}}>
+                        <button className="btn-reject" onClick={() => setShowRoleModal(false)}>Cancel</button>
+                        <button className="btn-approve" onClick={handleRequestRoleChange}>Submit</button>
+                    </div>
+                </div>
+            </div>
         )}
 
         {error && <div className="error">{error}</div>}

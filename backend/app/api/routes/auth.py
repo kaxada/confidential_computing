@@ -4,11 +4,13 @@ from sqlalchemy.orm import Session
 from app.core.security import create_token
 from app.core.db import get_session
 from app.models import Role, User
-from app.schemas import LoginRequest, SignupRequest
+from app.schemas import LoginRequest, RoleChangeRequest, SignupRequest
+from app.services.log import log_event
 from app.services.user import (
     create_user,
     delete_user_and_threads,
     get_user_by_email,
+    request_role_change,
     verify_credentials,
 )
 from app.api.deps.auth import require_approved
@@ -43,6 +45,9 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if not user.approved:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account pending approval")
+    
+    log_event(session, user.id, "login")
+    
     token = create_token(
         {
             "sub": str(user.id),
@@ -61,9 +66,32 @@ def me(user: User = Depends(require_approved)):
         "last_name": user.last_name,
         "requested_role": user.requested_role.value,
         "role": user.role.value if user.role else None,
+        "role_expires_at": user.role_expires_at,
         "approved": bool(user.approved),
         "created_at": user.created_at,
     }
+
+
+@router.post("/request-role")
+def request_role(
+    payload: RoleChangeRequest,
+    session: Session = Depends(get_session),
+    user: User = Depends(require_approved),
+):
+    try:
+        role = Role.from_str(payload.role)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
+
+    request_role_change(session, user.id, role, payload.reason)
+    log_event(session, user.id, "role_request", {"requested_role": role.value, "reason": payload.reason})
+    return {"status": "requested"}
+
+
+@router.post("/logout")
+def logout(session: Session = Depends(get_session), user: User = Depends(require_approved)):
+    log_event(session, user.id, "logout")
+    return {"status": "logged_out"}
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

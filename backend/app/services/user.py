@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from passlib.context import CryptContext
@@ -70,12 +71,31 @@ def list_pending_users(session: Session) -> List[User]:
     return list(session.execute(stmt).scalars().all())
 
 
-def approve_user(session: Session, user_id: int, role: Role) -> Optional[User]:
+def list_all_users(session: Session) -> List[User]:
+    return list(session.execute(select(User)).scalars().all())
+
+
+def approve_user(
+    session: Session, user_id: int, role: Role, expires_at: Optional[datetime] = None
+) -> Optional[User]:
     user = session.get(User, user_id)
     if not user:
         return None
     user.role = role
     user.approved = 1
+    user.role_expires_at = expires_at
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def request_role_change(session: Session, user_id: int, role: Role, reason: str) -> Optional[User]:
+    user = session.get(User, user_id)
+    if not user:
+        return None
+    user.requested_role = role
+    user.request_reason = reason
     session.add(user)
     session.commit()
     session.refresh(user)

@@ -6,6 +6,8 @@ from pydantic import BaseModel
 class SignupRequest(BaseModel):
     email: str
     password: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     requested_role: Optional[str] = None
 
 

@@ -28,10 +28,19 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_user(session: Session, email: str, password: str, requested_role: Role) -> User:
+def create_user(
+    session: Session,
+    email: str,
+    password: str,
+    requested_role: Role,
+    first_name: Optional[str] = None,
+    last_name: Optional[str] = None,
+) -> User:
     user = User(
         email=email.lower(),
         password_hash=hash_password(password),
+        first_name=first_name,
+        last_name=last_name,
         requested_role=requested_role,
         role=None,
         approved=0,

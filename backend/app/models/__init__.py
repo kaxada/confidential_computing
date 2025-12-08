@@ -31,6 +31,8 @@ def role_enum():
 class UserDTO:
     id: int
     email: str
+    first_name: Optional[str]
+    last_name: Optional[str]
     requested_role: Role
     role: Optional[Role]
     approved: bool
@@ -42,6 +44,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
+    first_name = Column(String(255), nullable=True)
+    last_name = Column(String(255), nullable=True)
     requested_role = Column(role_enum(), nullable=False, default=Role.RESEARCHER)
     role = Column(role_enum(), nullable=True)
     approved = Column(Integer, default=0, nullable=False)

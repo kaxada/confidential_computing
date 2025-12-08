@@ -82,7 +82,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
           {menuOpen && !collapsed && (
             <div className="user-menu">
                <div className="menu-item info">
-                  <div className="menu-email">{user.email}</div>
+                  <div className="menu-email">
+                    {(user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}` : user.email}
+                  </div>
                   {profile?.role && <div className="menu-role">{profile.role}</div>}
                </div>
                <div className="menu-divider"></div>
@@ -91,9 +93,11 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
             </div>
           )}
           <button className={`profile-btn ${menuOpen ? 'active' : ''}`} onClick={handleProfileClick} title="User menu">
-            <div className="avatar small">{user.name?.[0]?.toUpperCase() || 'U'}</div>
+            <div className="avatar small">{user.first_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}</div>
             {!collapsed && <div className="user-info">
-                <div className="user-name">{user.name || user.email}</div>
+                <div className="user-name">
+                    {(user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}` : user.email}
+                </div>
             </div>}
           </button>
         </div>

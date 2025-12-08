@@ -83,6 +83,13 @@ export default function App() {
       try {
         const data = await api.me(user.token)
         setProfile(data)
+        const newUserName = (data.first_name && data.last_name) ? `${data.first_name} ${data.last_name}` : data.email
+        setUser(prevUser => ({
+            ...prevUser,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            name: newUserName,
+        }))
       } catch (err) {
         handleLogout()
       }
@@ -112,7 +119,14 @@ export default function App() {
   }
 
   const handleLogin = (creds, token, role) => {
-    const userData = { email: creds.email, name: creds.name || creds.email, role, token }
+    const userData = { 
+      email: creds.email, 
+      first_name: creds.first_name,
+      last_name: creds.last_name,
+      name: (creds.first_name && creds.last_name) ? `${creds.first_name} ${creds.last_name}` : creds.email, 
+      role, 
+      token 
+    }
     setUser(userData)
     localStorage.setItem('cc_session', JSON.stringify({ user: userData, timestamp: Date.now() }))
     setThreads([])

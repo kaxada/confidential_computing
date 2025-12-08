@@ -19,7 +19,7 @@ function Icon({ path, onClick }) {
 
 export default function AuthView({ onLogin, onError }) {
   const [mode, setMode] = useState('login')
-  const [form, setForm] = useState({ name: '', email: '', password: '', requested_role: 'researcher' })
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '', requested_role: 'researcher' })
   const [status, setStatus] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   
@@ -35,12 +35,22 @@ export default function AuthView({ onLogin, onError }) {
     onError(null)
     try {
       if (mode === 'signup') {
-        const res = await api.signup(form)
+        const res = await api.signup({
+            email: form.email,
+            password: form.password,
+            first_name: form.first_name,
+            last_name: form.last_name,
+            requested_role: form.requested_role
+        })
         setStatus('Account created. Pending admin approval.')
         // Do NOT switch to login automatically, let user see the message.
       } else {
         const res = await api.login({ email: form.email, password: form.password })
-        onLogin({ email: form.email, name: form.name || form.email }, res.token, res.role)
+        onLogin({ 
+            email: form.email, 
+            first_name: form.first_name, 
+            last_name: form.last_name,
+        }, res.token, res.role)
       }
     } catch (err) {
       onError(err.message)
@@ -66,16 +76,28 @@ export default function AuthView({ onLogin, onError }) {
             {!isSignupSuccess ? (
                 <form onSubmit={submit} className="auth-form">
                     {!isLogin && (
-                        <div className="input-group">
-                            <input 
-                                name="name" 
-                                value={form.name} 
-                                onChange={handleChange} 
-                                placeholder="Full Name" 
-                                className="auth-input" 
-                                required 
-                            />
-                        </div>
+                        <>
+                            <div className="input-group">
+                                <input 
+                                    name="first_name" 
+                                    value={form.first_name} 
+                                    onChange={handleChange} 
+                                    placeholder="First Name" 
+                                    className="auth-input" 
+                                    required 
+                                />
+                            </div>
+                            <div className="input-group">
+                                <input 
+                                    name="last_name" 
+                                    value={form.last_name} 
+                                    onChange={handleChange} 
+                                    placeholder="Last Name" 
+                                    className="auth-input" 
+                                    required 
+                                />
+                            </div>
+                        </>
                     )}
 
                     <div className="input-group">

@@ -787,6 +787,8 @@ textarea.chat-input-field {
 /* Thread Item Styles */
 .thread-link {
   justify-content: space-between;
+  width: 100%;
+  min-width: 0; 
 }
 .thread-title {
   flex: 1;
@@ -806,19 +808,13 @@ textarea.chat-input-field {
   scrollbar-color: var(--text-secondary) transparent;
 }
 
-/* ... existing styles ... */
 
 .thread-actions {
   display: flex;
   align-items: center;
-  opacity: 0; /* Hidden by default */
-  flex-shrink: 0; /* Prevent actions from shrinking */
+  opacity: 1; 
+  flex-shrink: 0; 
   transition: opacity 0.2s ease; /* Smooth transition */
-}
-.thread-item-wrapper:hover .thread-actions, 
-.thread-link.active .thread-actions,
-.thread-item-wrapper.active .thread-actions {
-  opacity: 1; /* Visible on hover or when active */
 }
 .icon-btn-small {
   padding: 4px;

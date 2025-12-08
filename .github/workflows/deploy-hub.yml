@@ -23,8 +23,8 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend
-          npm ci
-          npm run build
+          VITE_API_BASE=http://${{ secrets.HUB_HOST }}:8000 npm ci
+          VITE_API_BASE=http://${{ secrets.HUB_HOST }}:8000 npm run build
 
       - name: Create deployment bundle
         run: |

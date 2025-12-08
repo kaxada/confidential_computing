@@ -1,11 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.security import create_token, decode_token
+from app.core.security import create_token
 from app.core.db import get_session
 from app.models import Role, User
-from app.schemas import LoginRequest, SignupRequest
-from app.services.user import create_user, get_user_by_email, verify_credentials
+from app.schemas import LoginRequest, RoleChangeRequest, SignupRequest
+from app.services.log import log_event
+from app.services.user import (
+    create_user,
+    delete_user_and_threads,
+    get_user_by_email,
+    request_role_change,
+    verify_credentials,
+)
+from app.api.deps.auth import require_approved
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -19,7 +27,14 @@ def signup(payload: SignupRequest, session: Session = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
     if get_user_by_email(session, payload.email):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-    create_user(session, email=payload.email, password=payload.password, requested_role=role)
+    create_user(
+        session,
+        email=payload.email,
+        password=payload.password,
+        requested_role=role,
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+    )
     return {"status": "pending"}
 
 
@@ -30,6 +45,9 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     if not user.approved:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account pending approval")
+    
+    log_event(session, user.id, "login")
+    
     token = create_token(
         {
             "sub": str(user.id),
@@ -37,3 +55,48 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
         }
     )
     return {"token": token, "role": user.role.value if user.role else None}
+
+
+@router.get("/me")
+def me(user: User = Depends(require_approved)):
+    return {
+        "id": user.id,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "requested_role": user.requested_role.value,
+        "role": user.role.value if user.role else None,
+        "role_expires_at": user.role_expires_at,
+        "approved": bool(user.approved),
+        "created_at": user.created_at,
+    }
+
+
+@router.post("/request-role")
+def request_role(
+    payload: RoleChangeRequest,
+    session: Session = Depends(get_session),
+    user: User = Depends(require_approved),
+):
+    try:
+        role = Role.from_str(payload.role)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
+
+    request_role_change(session, user.id, role, payload.reason)
+    log_event(session, user.id, "role_request", {"requested_role": role.value, "reason": payload.reason})
+    return {"status": "requested"}
+
+
+@router.post("/logout")
+def logout(session: Session = Depends(get_session), user: User = Depends(require_approved)):
+    log_event(session, user.id, "logout")
+    return {"status": "logged_out"}
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(session: Session = Depends(get_session), user: User = Depends(require_approved)):
+    deleted = delete_user_and_threads(session, user.id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

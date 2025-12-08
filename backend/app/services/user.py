@@ -1,10 +1,11 @@
+from datetime import datetime
 from typing import List, Optional
 
 from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Role, User
+from app.models import ChatThread, Role, User
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
@@ -28,10 +29,19 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_user(session: Session, email: str, password: str, requested_role: Role) -> User:
+def create_user(
+    session: Session,
+    email: str,
+    password: str,
+    requested_role: Role,
+    first_name: Optional[str] = None,
+    last_name: Optional[str] = None,
+) -> User:
     user = User(
         email=email.lower(),
         password_hash=hash_password(password),
+        first_name=first_name,
+        last_name=last_name,
         requested_role=requested_role,
         role=None,
         approved=0,
@@ -61,13 +71,57 @@ def list_pending_users(session: Session) -> List[User]:
     return list(session.execute(stmt).scalars().all())
 
 
-def approve_user(session: Session, user_id: int, role: Role) -> Optional[User]:
+def list_all_users(session: Session) -> List[User]:
+    return list(session.execute(select(User)).scalars().all())
+
+
+def approve_user(
+    session: Session, user_id: int, role: Role, expires_at: Optional[datetime] = None
+) -> Optional[User]:
     user = session.get(User, user_id)
     if not user:
         return None
     user.role = role
     user.approved = 1
+    user.role_expires_at = expires_at
     session.add(user)
     session.commit()
     session.refresh(user)
     return user
+
+
+def request_role_change(session: Session, user_id: int, role: Role, reason: str) -> Optional[User]:
+    user = session.get(User, user_id)
+    if not user:
+        return None
+    user.requested_role = role
+    user.request_reason = reason
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def delete_pending_user(session: Session, user_id: int) -> bool:
+    """Delete a user that has not been approved yet."""
+    user = session.get(User, user_id)
+    if not user:
+        return False
+    if user.approved:
+        return False
+    session.delete(user)
+    session.commit()
+    return True
+
+
+def delete_user_and_threads(session: Session, user_id: int) -> bool:
+    """Delete a user and their chat data."""
+    user = session.get(User, user_id)
+    if not user:
+        return False
+    threads = session.query(ChatThread).filter_by(user_id=user_id).all()
+    for t in threads:
+        session.delete(t)  # cascades to messages
+    session.delete(user)
+    session.commit()
+    return True

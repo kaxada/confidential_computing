@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { api, API_BASE } from './api'
+import { useEffect, useState } from 'react'
+import { api, ROLE_OPTIONS } from './api'
 import AuthView from './components/AuthView'
 import ChatView from './components/ChatView'
 import Sidebar from './components/Sidebar'
 import AdminPanel from './components/AdminPanel'
+import Profile from './components/Profile'
 
 export default function App() {
   const [user, setUser] = useState(null) // { email, role, token }
@@ -11,12 +12,38 @@ export default function App() {
   const [activeThreadId, setActiveThreadId] = useState(null)
   const [messages, setMessages] = useState([])
   const [loadingMessages, setLoadingMessages] = useState(false)
+  const [isThinking, setIsThinking] = useState(false)
+  const [latestResponseId, setLatestResponseId] = useState(null)
   const [error, setError] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  
+  const [showRoleModal, setShowRoleModal] = useState(false)
+  const [requestRole, setRequestRole] = useState(ROLE_OPTIONS[0])
+  const [requestReason, setRequestReason] = useState('')
+
+  const SESSION_DURATION = 60 * 1000 // 1 minute
 
   const isAdmin = user?.role === 'admin'
 
+  useEffect(() => {
+    const stored = localStorage.getItem('cc_session')
+    if (stored) {
+      try {
+        const { user: savedUser, timestamp } = JSON.parse(stored)
+        if (Date.now() - timestamp < SESSION_DURATION) {
+          setUser(savedUser)
+        } else {
+          localStorage.removeItem('cc_session')
+        }
+      } catch (e) {
+        localStorage.removeItem('cc_session')
+      }
+    }
+  }, [])
+
   const loadThreads = async (token) => {
-    if (!token) return
+    if (!token || isAdmin) return
     try {
       const data = await api.threads(token)
       setThreads(data)
@@ -42,19 +69,49 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (user?.token) {
+    if (user?.token && !isAdmin) {
       loadThreads(user.token)
     }
-  }, [user?.token])
+  }, [user?.token, isAdmin])
 
   useEffect(() => {
-    if (activeThreadId && user?.token) {
+    if (activeThreadId && user?.token && !isAdmin) {
+      setLatestResponseId(null)
       loadMessages(activeThreadId, user.token)
     }
-  }, [activeThreadId, user?.token])
+  }, [activeThreadId, user?.token, isAdmin])
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.token) {
+        setProfile(null)
+        return
+      }
+      try {
+        const data = await api.me(user.token)
+        setProfile(data)
+        const newUserName = (data.first_name && data.last_name) ? `${data.first_name} ${data.last_name}` : data.email
+        setUser(prevUser => ({
+            ...prevUser,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            name: newUserName,
+        }))
+      } catch (err) {
+        handleLogout()
+      }
+    }
+    fetchProfile()
+  }, [user?.token])
 
   const handleSend = async (text) => {
     if (!user?.token) return
+    
+    // show user message immediately
+    const tempId = Date.now()
+    setMessages(prev => [...prev, { id: tempId, role: 'user', content: text }])
+    setIsThinking(true)
+
     try {
       const payload = { question: text, thread_id: activeThreadId }
       const res = await api.chat(payload, user.token)
@@ -63,66 +120,159 @@ export default function App() {
         setActiveThreadId(threadId)
         await loadThreads(user.token)
       }
-      await loadMessages(threadId, user.token)
+      
+      const data = await api.messages(threadId, user.token)
+      setMessages(data)
+      if (data.length > 0) {
+        setLatestResponseId(data[data.length - 1].id)
+      }
     } catch (err) {
       setError(err.message)
+    } finally {
+      setIsThinking(false)
     }
   }
 
   const handleNewChat = () => {
     setActiveThreadId(null)
     setMessages([])
+    setLatestResponseId(null)
   }
 
   const handleLogin = (creds, token, role) => {
-    setUser({ email: creds.email, role, token })
+    const userData = { 
+      email: creds.email, 
+      first_name: creds.first_name,
+      last_name: creds.last_name,
+      name: (creds.first_name && creds.last_name) ? `${creds.first_name} ${creds.last_name}` : creds.email, 
+      role, 
+      token 
+    }
+    setUser(userData)
+    localStorage.setItem('cc_session', JSON.stringify({ user: userData, timestamp: Date.now() }))
     setThreads([])
     setMessages([])
     setActiveThreadId(null)
     setError(null)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await api.logout(user?.token) } catch(e) {}
+    localStorage.removeItem('cc_session')
     setUser(null)
     setThreads([])
     setMessages([])
     setActiveThreadId(null)
+    setProfile(null)
+  }
+
+  const handleDeleteAccount = async () => {
+    try {
+      await api.deleteAccount(user.token)
+      handleLogout()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleRenameThread = async (threadId, newTitle) => {
+    try {
+      await api.updateThread(threadId, newTitle, user.token)
+      setThreads(threads.map(t => t.id === threadId ? { ...t, title: newTitle } : t))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteThread = async (threadId) => {
+    try {
+      await api.deleteThread(threadId, user.token)
+      setThreads(threads.filter(t => t.id !== threadId))
+      if (activeThreadId === threadId) {
+        handleNewChat()
+      }
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleRequestRoleChange = async () => {
+      if (!user?.token) return
+      try {
+          await api.requestRole(requestRole, requestReason, user.token)
+          setShowRoleModal(false)
+          setRequestReason('')
+          alert("Role request submitted.")
+      } catch (e) {
+          setError(e.message)
+      }
   }
 
   return (
-    <div className="app">
+    <div className={`app ${isSidebarCollapsed ? 'collapsed' : ''}`}>
       <Sidebar
+        collapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         user={user}
+        profile={profile}
+        showThreads={!isAdmin && !!user}
         threads={threads}
         activeThreadId={activeThreadId}
         onSelectThread={setActiveThreadId}
         onNewChat={handleNewChat}
         onLogout={handleLogout}
+        onDelete={handleDeleteAccount}
+        onRenameThread={handleRenameThread}
+        onDeleteThread={handleDeleteThread}
+        onRequestRole={() => setShowRoleModal(true)}
       />
       <main className="main">
-        <header className="topbar">
-          <div>
-            <div className="eyebrow">Connected to {API_BASE}</div>
-            <div className="title">Confidential Computing</div>
-            <div className="subtitle">Hub + Enclave backed (stubbed site)</div>
-          </div>
-          {user && <div className="pill">{user.email} · {user.role}</div>}
-        </header>
-
         {!user && (
           <AuthView onLogin={handleLogin} onError={setError} />
         )}
 
-        {user && (
-          <div className="content-grid">
+        {user && isAdmin && <AdminPanel user={user} onError={setError} />}
+
+        {user && !isAdmin && (
+          <div className="content-grid single">
             <ChatView
               messages={messages}
               loading={loadingMessages}
+              thinking={isThinking}
+              latestResponseId={latestResponseId}
               onSend={handleSend}
               disabled={!user}
+              user={user}
+              threadId={activeThreadId}
             />
-            {isAdmin && <AdminPanel user={user} onError={setError} />}
           </div>
+        )}
+
+        {showRoleModal && (
+            <div className="auth-container" style={{zIndex: 200, background: 'rgba(0,0,0,0.5)'}}>
+                <div className="auth-card-modern" style={{maxWidth: 400}}>
+                    <h3 className="auth-title" style={{fontSize: 20}}>Request Role Change</h3>
+                    <div className="input-group">
+                        <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>New Role</label>
+                        <select value={requestRole} onChange={e => setRequestRole(e.target.value)} className="auth-input">
+                            {ROLE_OPTIONS.filter(r => r !== 'admin').map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                        </select>
+                    </div>
+                    <div className="input-group" style={{marginTop: 10}}>
+                        <textarea 
+                            value={requestReason} 
+                            onChange={e => setRequestReason(e.target.value)} 
+                            placeholder="Reason for request..."
+                            className="auth-input"
+                            rows={3}
+                        />
+                    </div>
+                    <div className="auth-actions" style={{marginTop: 20, gap: 10, justifyContent: 'flex-end'}}>
+                        <button className="btn-reject" onClick={() => setShowRoleModal(false)}>Cancel</button>
+                        <button className="btn-approve" onClick={handleRequestRoleChange}>Submit</button>
+                    </div>
+                </div>
+            </div>
         )}
 
         {error && <div className="error">{error}</div>}

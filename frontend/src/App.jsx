@@ -99,6 +99,12 @@ export default function App() {
 
   const handleSend = async (text) => {
     if (!user?.token) return
+    
+    // show user message immediately
+    const tempId = Date.now()
+    setMessages(prev => [...prev, { id: tempId, role: 'user', content: text }])
+    setLoadingMessages(true)
+
     try {
       const payload = { question: text, thread_id: activeThreadId }
       const res = await api.chat(payload, user.token)
@@ -110,6 +116,7 @@ export default function App() {
       await loadMessages(threadId, user.token)
     } catch (err) {
       setError(err.message)
+      setLoadingMessages(false)
     }
   }
 

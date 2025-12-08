@@ -8,20 +8,41 @@ function Icon({ path }) {
   )
 }
 
-function MessageRow({ role, content }) {
+function MessageRow({ role, content, animate }) {
   const isUser = role === 'user'
+  const [displayContent, setDisplayContent] = useState(animate && !isUser ? '' : content)
+
+  useEffect(() => {
+    if (!animate || isUser) {
+      setDisplayContent(content)
+      return
+    }
+
+    let i = 0
+    setDisplayContent('')
+    const interval = setInterval(() => {
+      i++
+      setDisplayContent(content.substring(0, i))
+      if (i >= content.length) {
+        clearInterval(interval)
+      }
+    }, 15) // Typing speed
+
+    return () => clearInterval(interval)
+  }, [content, animate, isUser])
+
   return (
     <div className={`message-row ${isUser ? 'user' : 'assistant'}`}>
       {!isUser && (
         <div className="message-avatar">
-           {/* Simple SVG logo or similar for assistant */}
+           {/* SVG logo for assistant */}
            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width: '100%', height: '100%', padding: 4, color: 'white'}}>
              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
            </svg>
         </div>
       )}
       <div className={isUser ? 'message-bubble' : 'assistant-text'}>
-        <div className="message-content">{content}</div>
+        <div className="message-content">{displayContent}</div>
       </div>
     </div>
   )
@@ -70,8 +91,13 @@ export default function ChatView({ messages, loading, onSend, disabled, user }) 
           </div>
         ) : (
           <div className="messages-list">
-             {messages.map((m) => (
-              <MessageRow key={m.id} role={m.role} content={m.content} />
+             {messages.map((m, index) => (
+              <MessageRow 
+                key={m.id || index} 
+                role={m.role} 
+                content={m.content} 
+                animate={index === messages.length - 1}
+              />
             ))}
             {loading && (
                <div className="message-row assistant">
@@ -81,7 +107,13 @@ export default function ChatView({ messages, loading, onSend, disabled, user }) 
                    </svg>
                  </div>
                  <div className="assistant-text">
-                   <div className="message-content">Thinking...</div>
+                   <div className="message-bubble" style={{background: 'transparent', padding: '10px 0'}}>
+                     <div className="typing-indicator">
+                        <div className="typing-dot"></div>
+                        <div className="typing-dot"></div>
+                        <div className="typing-dot"></div>
+                     </div>
+                   </div>
                  </div>
                </div>
             )}

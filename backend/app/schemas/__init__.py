@@ -33,6 +33,10 @@ class ThreadResponse(BaseModel):
     title: Optional[str] = None
 
 
+class ThreadUpdateRequest(BaseModel):
+    title: str
+
+
 class MessageResponse(BaseModel):
     id: int
     role: str

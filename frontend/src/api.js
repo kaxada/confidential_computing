@@ -28,6 +28,8 @@ export const api = {
   deleteAccount: (token) => request('/auth/me', { method: 'DELETE', token }),
   chat: (payload, token) => request('/chat/query', { method: 'POST', body: payload, token }),
   threads: (token) => request('/chat/threads', { token }),
+  updateThread: (threadId, title, token) => request(`/chat/threads/${threadId}`, { method: 'PATCH', body: { title }, token }),
+  deleteThread: (threadId, token) => request(`/chat/threads/${threadId}`, { method: 'DELETE', token }),
   messages: (threadId, token) => request(`/chat/threads/${threadId}/messages`, { token }),
 }
 

@@ -160,6 +160,27 @@ export default function App() {
     }
   }
 
+  const handleRenameThread = async (threadId, newTitle) => {
+    try {
+      await api.updateThread(threadId, newTitle, user.token)
+      setThreads(threads.map(t => t.id === threadId ? { ...t, title: newTitle } : t))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleDeleteThread = async (threadId) => {
+    try {
+      await api.deleteThread(threadId, user.token)
+      setThreads(threads.filter(t => t.id !== threadId))
+      if (activeThreadId === threadId) {
+        handleNewChat()
+      }
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   return (
     <div className={`app ${isSidebarCollapsed ? 'collapsed' : ''}`}>
       <Sidebar
@@ -174,6 +195,8 @@ export default function App() {
         onNewChat={handleNewChat}
         onLogout={handleLogout}
         onDelete={handleDeleteAccount}
+        onRenameThread={handleRenameThread}
+        onDeleteThread={handleDeleteThread}
       />
       <main className="main">
         {!user && (

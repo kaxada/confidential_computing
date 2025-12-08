@@ -31,6 +31,26 @@ def list_threads(session: Session, user_id: int) -> List[ChatThread]:
     return list(session.execute(stmt).scalars().all())
 
 
+def update_thread(session: Session, thread_id: int, user_id: int, title: str) -> Optional[ChatThread]:
+    thread = session.get(ChatThread, thread_id)
+    if not thread or thread.user_id != user_id:
+        return None
+    thread.title = title
+    session.add(thread)
+    session.commit()
+    session.refresh(thread)
+    return thread
+
+
+def delete_thread(session: Session, thread_id: int, user_id: int) -> bool:
+    thread = session.get(ChatThread, thread_id)
+    if not thread or thread.user_id != user_id:
+        return False
+    session.delete(thread)
+    session.commit()
+    return True
+
+
 def list_messages(session: Session, user_id: int, thread_id: int) -> List[ChatMessage]:
     stmt = select(ChatMessage).where(ChatMessage.user_id == user_id, ChatMessage.thread_id == thread_id).order_by(ChatMessage.created_at)
     return list(session.execute(stmt).scalars().all())

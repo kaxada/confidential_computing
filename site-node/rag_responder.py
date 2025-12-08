@@ -7,13 +7,6 @@ from vector_db_client import VectorDBClient
 from phi_scrubber import PHIScrubber
 from policy_token import PolicyToken, create_default_token
 
-# Import based on provider
-if config.LLM_PROVIDER == "openai":
-    from openai import OpenAI
-else:
-    import google.generativeai as genai
-    genai.configure(api_key=config.GOOGLE_API_KEY)
-
 
 class RAGResponder:
     """
@@ -28,7 +21,7 @@ class RAGResponder:
         Args:
             provider: LLM provider ("openai" or "gemini"). If None, uses config default.
         """
-        self.provider = provider or config.LLM_PROVIDER
+        self.provider = (provider or config.LLM_PROVIDER).lower()
         
         # Initialize the appropriate LLM client
         if self.provider == "openai":
@@ -36,7 +29,10 @@ class RAGResponder:
         elif self.provider == "gemini":
             self._init_gemini()
         else:
-            raise ValueError(f"Unsupported LLM provider: {self.provider}")
+            raise ValueError(
+                f"Unsupported LLM provider '{self.provider}'. "
+                "Set LLM_PROVIDER to 'openai' or 'gemini' in your .env."
+            )
         
         # Initialize vector DB client
         self.vector_db = VectorDBClient()
@@ -52,13 +48,16 @@ class RAGResponder:
     
     def _init_openai(self):
         """Initialize OpenAI client."""
+        # Set defaults so downstream code can still display configuration info
+        self.model_name = config.DEFAULT_OPENAI_MODEL
+        self.generation_config = config.OPENAI_GENERATION_CONFIG
+
         try:
             if not config.OPENAI_API_KEY:
                 raise ValueError("OPENAI_API_KEY not configured")
             
+            from openai import OpenAI
             self.client = OpenAI(api_key=config.OPENAI_API_KEY)
-            self.model_name = config.DEFAULT_OPENAI_MODEL
-            self.generation_config = config.OPENAI_GENERATION_CONFIG
             
             logging.info(f"Initialized OpenAI model: {self.model_name}")
         except Exception as e:
@@ -67,10 +66,14 @@ class RAGResponder:
     
     def _init_gemini(self):
         """Initialize Google Gemini client."""
+        # Default so configuration prints do not crash even if init fails
+        self.model_name = getattr(config, "DEFAULT_GOOGLE_MODEL_ID", "gemini-1.5-flash")
         try:
             if not config.GOOGLE_API_KEY:
                 raise ValueError("GOOGLE_API_KEY not configured")
             
+            import google.generativeai as genai
+            genai.configure(api_key=config.GOOGLE_API_KEY)
             self.client = genai.GenerativeModel(
                 config.DEFAULT_GOOGLE_MODEL_ID,
                 generation_config=config.DEFAULT_GOOGLE_GENERATION_CONFIG

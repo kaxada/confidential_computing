@@ -12,6 +12,8 @@ export default function App() {
   const [activeThreadId, setActiveThreadId] = useState(null)
   const [messages, setMessages] = useState([])
   const [loadingMessages, setLoadingMessages] = useState(false)
+  const [isThinking, setIsThinking] = useState(false)
+  const [latestResponseId, setLatestResponseId] = useState(null)
   const [error, setError] = useState(null)
   const [profile, setProfile] = useState(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -70,6 +72,7 @@ export default function App() {
 
   useEffect(() => {
     if (activeThreadId && user?.token && !isAdmin) {
+      setLatestResponseId(null)
       loadMessages(activeThreadId, user.token)
     }
   }, [activeThreadId, user?.token, isAdmin])
@@ -103,7 +106,7 @@ export default function App() {
     // show user message immediately
     const tempId = Date.now()
     setMessages(prev => [...prev, { id: tempId, role: 'user', content: text }])
-    setLoadingMessages(true)
+    setIsThinking(true)
 
     try {
       const payload = { question: text, thread_id: activeThreadId }
@@ -113,16 +116,23 @@ export default function App() {
         setActiveThreadId(threadId)
         await loadThreads(user.token)
       }
-      await loadMessages(threadId, user.token)
+      
+      const data = await api.messages(threadId, user.token)
+      setMessages(data)
+      if (data.length > 0) {
+        setLatestResponseId(data[data.length - 1].id)
+      }
     } catch (err) {
       setError(err.message)
-      setLoadingMessages(false)
+    } finally {
+      setIsThinking(false)
     }
   }
 
   const handleNewChat = () => {
     setActiveThreadId(null)
     setMessages([])
+    setLatestResponseId(null)
   }
 
   const handleLogin = (creds, token, role) => {
@@ -210,9 +220,12 @@ export default function App() {
             <ChatView
               messages={messages}
               loading={loadingMessages}
+              thinking={isThinking}
+              latestResponseId={latestResponseId}
               onSend={handleSend}
               disabled={!user}
               user={user}
+              threadId={activeThreadId}
             />
           </div>
         )}

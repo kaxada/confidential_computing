@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo } from 'react'
 
 function Icon({ path }) {
   return (
@@ -8,7 +8,7 @@ function Icon({ path }) {
   )
 }
 
-function MessageRow({ role, content, animate }) {
+const MessageRow = memo(({ role, content, animate }) => {
   const isUser = role === 'user'
   const [displayContent, setDisplayContent] = useState(animate && !isUser ? '' : content)
 
@@ -46,9 +46,9 @@ function MessageRow({ role, content, animate }) {
       </div>
     </div>
   )
-}
+})
 
-export default function ChatView({ messages, loading, onSend, disabled, user }) {
+export default function ChatView({ messages, loading, thinking, latestResponseId, onSend, disabled, user }) {
   const [text, setText] = useState('')
   const textareaRef = useRef(null)
   const scrollRef = useRef(null)
@@ -64,7 +64,7 @@ export default function ChatView({ messages, loading, onSend, disabled, user }) 
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages, loading])
+  }, [messages, thinking])
 
   const handleSend = (e) => {
     e && e.preventDefault()
@@ -96,10 +96,10 @@ export default function ChatView({ messages, loading, onSend, disabled, user }) 
                 key={m.id || index} 
                 role={m.role} 
                 content={m.content} 
-                animate={index === messages.length - 1}
+                animate={m.id === latestResponseId}
               />
             ))}
-            {loading && (
+            {thinking && (
                <div className="message-row assistant">
                  <div className="message-avatar">
                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width: '100%', height: '100%', padding: 4, color: 'white'}}>

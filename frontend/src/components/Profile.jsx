@@ -3,6 +3,9 @@ import { useState } from 'react'
 export default function Profile({ user, profile, onLogout, onDelete }) {
   const [open, setOpen] = useState(false)
 
+  const roleLabel = profile?.role_label || profile?.role || user.role || 'member'
+  const privacyLabel = profile?.privacy_label || profile?.privacy_level
+
   const initials = (user.name || user.email || '?')
     .split(' ')
     .map((p) => p[0])
@@ -16,7 +19,15 @@ export default function Profile({ user, profile, onLogout, onDelete }) {
         <div className="avatar">{initials}</div>
         <div className="profile-meta">
           <div className="profile-name">{user.name || user.email}</div>
-          <div className="profile-role">{user.role || 'member'}</div>
+          <div className="role-privacy-row">
+            <span className="role-label">{roleLabel}</span>
+            {privacyLabel && (
+              <>
+                <span className="dot-separator" aria-hidden="true" />
+                <span className="privacy-label">{privacyLabel}</span>
+              </>
+            )}
+          </div>
         </div>
       </button>
       {open && (
@@ -27,8 +38,16 @@ export default function Profile({ user, profile, onLogout, onDelete }) {
           </div>
           {profile?.role && (
             <div className="profile-row">
-              <span className="muted">Role</span>
-              <span>{profile.role}</span>
+              <span className="muted">Access</span>
+              <div className="role-privacy-row compact">
+                <span className="role-label">{roleLabel}</span>
+                {privacyLabel && (
+                  <>
+                    <span className="dot-separator" aria-hidden="true" />
+                    <span className="privacy-label">{privacyLabel}</span>
+                  </>
+                )}
+              </div>
             </div>
           )}
           {profile?.created_at && (

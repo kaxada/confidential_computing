@@ -286,6 +286,37 @@ body {
   margin: 4px 0;
 }
 
+.role-privacy-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.role-privacy-row.compact {
+  gap: 6px;
+}
+
+.role-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.privacy-label {
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.dot-separator {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 /* Main Content */
 .main {
   display: flex;

@@ -13,6 +13,7 @@ from app.services.user import (
     request_role_change,
     verify_credentials,
 )
+from app.core.config import get_access_payload
 from app.api.deps.auth import require_approved
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -59,6 +60,7 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
 
 @router.get("/me")
 def me(user: User = Depends(require_approved)):
+    access_payload = get_access_payload(user.role or user.requested_role)
     return {
         "id": user.id,
         "email": user.email,
@@ -69,6 +71,7 @@ def me(user: User = Depends(require_approved)):
         "role_expires_at": user.role_expires_at,
         "approved": bool(user.approved),
         "created_at": user.created_at,
+        **access_payload,
     }
 
 

@@ -121,6 +121,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
+  const roleLabel = profile?.role_label || profile?.role || user?.role
+  const privacyLabel = profile?.privacy_label || profile?.privacy_level
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -194,7 +197,17 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                   <div className="menu-email">
                     {(user.first_name && user.last_name) ? `${user.first_name} ${user.last_name}` : user.email}
                   </div>
-                  {profile?.role && <div className="menu-role">{profile.role}</div>}
+                  {(roleLabel || privacyLabel) && (
+                    <div className="role-privacy-row compact">
+                      {roleLabel && <span className="role-label">{roleLabel}</span>}
+                      {privacyLabel && (
+                        <>
+                          <span className="dot-separator" aria-hidden="true" />
+                          <span className="privacy-label">{privacyLabel}</span>
+                        </>
+                      )}
+                    </div>
+                  )}
                   {profile?.role_expires_at && (
                       <div className="menu-role" style={{fontSize: '11px', color: 'var(--accent)'}}>
                           Expires: {new Date(profile.role_expires_at).toLocaleDateString()}

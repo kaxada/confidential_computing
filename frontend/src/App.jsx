@@ -19,14 +19,17 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   
   const [showRoleModal, setShowRoleModal] = useState(false)
-  const [requestRole, setRequestRole] = useState('student') // Default to most restricted
+  const [requestRole, setRequestRole] = useState('student')
   const [requestReason, setRequestReason] = useState('')
 
   const PRIVACY_OPTIONS = [
-    { label: 'Restricted Access (High Privacy)', value: 'student' },
-    { label: 'Balanced Privacy (Moderate)', value: 'auditor' },
-    { label: 'Expanded Access (Low Privacy)', value: 'researcher' },
-    { label: 'Full Access (No Privacy)', value: 'pi' },
+    { label: 'Student (High Privacy)', value: 'student' },
+    { label: 'Intern (High Privacy)', value: 'intern' },
+    { label: 'Auditor (Moderate Privacy)', value: 'auditor' },
+    { label: 'Analyst (Moderate Privacy)', value: 'analyst' },
+    { label: 'Researcher (Low Privacy)', value: 'researcher' },
+    { label: 'Clinician (Low Privacy)', value: 'clinician' },
+    { label: 'PI (No Privacy)', value: 'pi' },
   ]
 
   const SESSION_DURATION = 60 * 1000 // 1 minute

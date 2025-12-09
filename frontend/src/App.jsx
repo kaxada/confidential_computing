@@ -32,7 +32,7 @@ export default function App() {
     { label: 'PI (No Privacy)', value: 'pi' },
   ]
 
-  const SESSION_DURATION = 60 * 1000 // 1 minute
+  const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes
 
   const isAdmin = user?.role === 'admin'
 

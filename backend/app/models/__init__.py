@@ -99,6 +99,7 @@ class UserLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     event = Column(String(50), nullable=False)
     details = Column(Text, nullable=True)
+    request_metadata = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="logs")

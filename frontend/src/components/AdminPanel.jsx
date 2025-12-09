@@ -69,6 +69,7 @@ export default function AdminPanel({ user, onError, activeTab }) {
   const [users, setUsers] = useState([])
   const [pendingRequests, setPendingRequests] = useState([])
   const [logs, setLogs] = useState([])
+  const [selectedLog, setSelectedLog] = useState(null)
   
   // For User Edit Modal
   const [selectedUser, setSelectedUser] = useState(null)
@@ -82,6 +83,23 @@ export default function AdminPanel({ user, onError, activeTab }) {
   
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
+
+  const formatDate = (dateString) => {
+      if (!dateString) return '-'
+      try {
+          return new Date(dateString).toLocaleString(undefined, {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              timeZoneName: 'short'
+          })
+      } catch (e) {
+          return dateString
+      }
+  }
 
   const loadData = async () => {
     if (!user?.token) return
@@ -384,8 +402,8 @@ export default function AdminPanel({ user, onError, activeTab }) {
                   </thead>
                   <tbody>
                       {logs.map(l => (
-                          <tr key={l.id} style={{borderBottom: '1px solid var(--border)'}}>
-                              <td style={{padding: 10}}>{new Date(l.created_at).toLocaleString()}</td>
+                          <tr key={l.id} style={{borderBottom: '1px solid var(--border)', cursor: 'pointer'}} onClick={() => setSelectedLog(l)} className="log-row">
+                              <td style={{padding: 10}}>{formatDate(l.created_at)}</td>
                               <td style={{padding: 10}}>{l.user_id}</td>
                               <td style={{padding: 10}}>{l.event}</td>
                               <td style={{padding: 10, maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={l.details}>
@@ -395,6 +413,46 @@ export default function AdminPanel({ user, onError, activeTab }) {
                       ))}
                   </tbody>
               </table>
+          </div>
+      )}
+
+      {selectedLog && (
+          <div className="auth-container" style={{zIndex: 200, background: 'rgba(0,0,0,0.5)'}} onClick={() => setSelectedLog(null)}>
+              <div className="auth-card-modern" style={{maxWidth: 600, textAlign: 'left', maxHeight: '90vh', overflowY: 'auto'}} onClick={e => e.stopPropagation()}>
+                  <h3 className="auth-title" style={{fontSize: 20}}>Log Details</h3>
+                  
+                  <div style={{marginBottom: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 14}}>
+                      <div><strong>Event:</strong> {selectedLog.event}</div>
+                      <div><strong>User ID:</strong> {selectedLog.user_id}</div>
+                      <div><strong>Time:</strong> {formatDate(selectedLog.created_at)}</div>
+                  </div>
+
+                  <div style={{marginBottom: 16}}>
+                      <div style={{fontWeight: 600, marginBottom: 4, fontSize: 14}}>Event Details</div>
+                      <pre style={{background: 'var(--input-bg)', padding: 10, borderRadius: 6, overflowX: 'auto', fontSize: 12, margin: 0}}>
+                          {(() => {
+                              if (!selectedLog.details) return 'None'
+                              try { return JSON.stringify(JSON.parse(selectedLog.details), null, 2) }
+                              catch (e) { return selectedLog.details }
+                          })()}
+                      </pre>
+                  </div>
+
+                  <div style={{marginBottom: 16}}>
+                      <div style={{fontWeight: 600, marginBottom: 4, fontSize: 14}}>Request Metadata</div>
+                      <pre style={{background: 'var(--input-bg)', padding: 10, borderRadius: 6, overflowX: 'auto', fontSize: 12, margin: 0}}>
+                          {(() => {
+                              if (!selectedLog.request_metadata) return 'None'
+                              try { return JSON.stringify(JSON.parse(selectedLog.request_metadata), null, 2) }
+                              catch (e) { return selectedLog.request_metadata }
+                          })()}
+                      </pre>
+                  </div>
+                  
+                  <div style={{textAlign: 'right'}}>
+                    <button className="btn-approve" onClick={() => setSelectedLog(null)}>Close</button>
+                  </div>
+              </div>
           </div>
       )}
 

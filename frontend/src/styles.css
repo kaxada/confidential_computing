@@ -876,3 +876,7 @@ textarea.chat-input-field {
   outline: none;
 }
 .mr-2 { margin-right: 8px; }
+
+.log-row:hover {
+    background: var(--hover-bg);
+}

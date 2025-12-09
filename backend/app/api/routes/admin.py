@@ -52,13 +52,20 @@ def get_all_users(session: Session = Depends(get_session), user: User = Depends(
 def get_logs(session: Session = Depends(get_session), user: User = Depends(require_role(Role.ADMIN))):
     stmt = select(UserLog).order_by(UserLog.created_at.desc()).limit(100)
     logs = session.execute(stmt).scalars().all()
+    
+    def ensure_utc(dt):
+        if dt and dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
+
     return [
         {
             "id": l.id,
             "user_id": l.user_id,
             "event": l.event,
             "details": l.details,
-            "created_at": l.created_at,
+            "request_metadata": l.request_metadata,
+            "created_at": ensure_utc(l.created_at),
         }
         for l in logs
     ]

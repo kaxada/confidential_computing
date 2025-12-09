@@ -54,6 +54,22 @@ export default function AdminPanel({ user, onError }) {
     }
   }
 
+  const handleApproveUser = async (userToApprove) => {
+    try {
+      setBusy(true)
+      await api.admin.approve({ 
+        user_id: userToApprove.id, 
+        role: userToApprove.requested_role 
+      }, user.token)
+      setStatus('User approved.')
+      await loadData()
+    } catch (err) {
+      onError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const handleDeleteUser = async (userId) => {
     if (!confirm("Are you sure you want to delete this user and all their data?")) return
     try {
@@ -127,6 +143,9 @@ export default function AdminPanel({ user, onError }) {
                                   {u.role_expires_at ? new Date(u.role_expires_at).toLocaleDateString() : 'Permanent'}
                               </td>
                               <td style={{padding: 10}}>
+                                  {!u.approved && (
+                                      <button onClick={() => handleApproveUser(u)} style={{marginRight: 8, cursor: 'pointer', background: 'none', border: 'none', color: 'var(--success-text, green)', fontWeight: 600}}>Approve</button>
+                                  )}
                                   <button onClick={() => setSelectedUser(u)} style={{marginRight: 8, cursor: 'pointer', background: 'none', border: 'none', color: 'var(--primary-btn)'}}>Edit</button>
                                   <button onClick={() => handleDeleteUser(u.id)} style={{cursor: 'pointer', background: 'none', border: 'none', color: 'var(--error-text)'}}>Delete</button>
                               </td>

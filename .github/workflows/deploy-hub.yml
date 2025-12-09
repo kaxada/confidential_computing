@@ -15,22 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          VITE_API_BASE=http://${{ secrets.HUB_HOST }}:8000 npm ci
-          VITE_API_BASE=http://${{ secrets.HUB_HOST }}:8000 npm run build
-
       - name: Create deployment bundle
         run: |
           # Create bundle in current workspace so scp-action can see it
+          # We bundle the full frontend source because the build now happens on the server (deploy_hub.sh)
           tar czf confidential_bundle.tgz \
-            backend frontend/dist infra
+            backend frontend infra
 
       - name: Copy bundle to hub
         uses: appleboy/scp-action@v0.1.7
@@ -54,3 +44,5 @@ jobs:
           script: |
             tar -xzf /tmp/confidential_bundle.tgz -C /tmp infra/scripts/deploy_hub.sh
             bash /tmp/infra/scripts/deploy_hub.sh /tmp/confidential_bundle.tgz
+            rm -f /tmp/confidential_bundle.tgz
+            rm -rf /tmp/infra

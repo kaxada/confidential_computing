@@ -18,13 +18,23 @@ export default function App() {
   const [profile, setProfile] = useState(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   
-  const [showRoleModal, setShowRoleModal] = useState(false)
-  const [requestRole, setRequestRole] = useState(ROLE_OPTIONS[0])
+  const [showAccessModal, setShowAccessModal] = useState(false)
+  const [requestPrivacyLevel, setRequestPrivacyLevel] = useState('high')
   const [requestReason, setRequestReason] = useState('')
+  const [viewMode, setViewMode] = useState('admin') // 'admin' or 'chat' for admins
+  const [adminTab, setAdminTab] = useState('pending') // 'pending', 'users', 'logs'
 
-  const SESSION_DURATION = 60 * 1000 // 1 minute
+  const PRIVACY_OPTIONS = [
+    { label: 'High Privacy', value: 'high' },
+    { label: 'Moderate Privacy ', value: 'moderate' },
+    { label: 'Low Privacy', value: 'low' },
+    { label: 'No Privacy', value: 'none' },
+  ]
+
+  const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes
 
   const isAdmin = user?.role === 'admin'
+  const showChat = !isAdmin || viewMode === 'chat'
 
   useEffect(() => {
     const stored = localStorage.getItem('cc_session')
@@ -43,7 +53,7 @@ export default function App() {
   }, [])
 
   const loadThreads = async (token) => {
-    if (!token || isAdmin) return
+    if (!token || (isAdmin && viewMode !== 'chat')) return
     try {
       const data = await api.threads(token)
       setThreads(data)
@@ -69,38 +79,42 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (user?.token && !isAdmin) {
+    if (user?.token && showChat) {
       loadThreads(user.token)
     }
-  }, [user?.token, isAdmin])
+  }, [user?.token, isAdmin, viewMode])
 
   useEffect(() => {
-    if (activeThreadId && user?.token && !isAdmin) {
+    if (activeThreadId && user?.token && showChat) {
       setLatestResponseId(null)
       loadMessages(activeThreadId, user.token)
     }
-  }, [activeThreadId, user?.token, isAdmin])
+  }, [activeThreadId, user?.token, isAdmin, viewMode])
+
+  const fetchProfile = async () => {
+    if (!user?.token) {
+      setProfile(null)
+      return
+    }
+    try {
+      const data = await api.me(user.token)
+      setProfile(data)
+      const newUserName = (data.first_name && data.last_name) ? `${data.first_name} ${data.last_name}` : data.email
+      setUser(prevUser => ({
+          ...prevUser,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          name: newUserName,
+          role: data.role,
+          base_role: data.base_role,
+          role_expires_at: data.role_expires_at,
+      }))
+    } catch (err) {
+      handleLogout()
+    }
+  }
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user?.token) {
-        setProfile(null)
-        return
-      }
-      try {
-        const data = await api.me(user.token)
-        setProfile(data)
-        const newUserName = (data.first_name && data.last_name) ? `${data.first_name} ${data.last_name}` : data.email
-        setUser(prevUser => ({
-            ...prevUser,
-            first_name: data.first_name,
-            last_name: data.last_name,
-            name: newUserName,
-        }))
-      } catch (err) {
-        handleLogout()
-      }
-    }
     fetchProfile()
   }, [user?.token])
 
@@ -154,6 +168,8 @@ export default function App() {
     setMessages([])
     setActiveThreadId(null)
     setError(null)
+    // Default admin view to dashboard
+    if (role === 'admin') setViewMode('admin')
   }
 
   const handleLogout = async () => {
@@ -196,13 +212,14 @@ export default function App() {
     }
   }
 
-  const handleRequestRoleChange = async () => {
+  const handleRequestAccessChange = async () => {
       if (!user?.token) return
       try {
-          await api.requestRole(requestRole, requestReason, user.token)
-          setShowRoleModal(false)
+          // Pass null for role, and the selected privacy level
+          await api.requestAccess(null, requestPrivacyLevel, requestReason, user.token)
+          setShowAccessModal(false)
           setRequestReason('')
-          alert("Role request submitted.")
+          alert("Privacy access request submitted.")
       } catch (e) {
           setError(e.message)
       }
@@ -215,7 +232,7 @@ export default function App() {
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         user={user}
         profile={profile}
-        showThreads={!isAdmin && !!user}
+        showThreads={showChat}
         threads={threads}
         activeThreadId={activeThreadId}
         onSelectThread={setActiveThreadId}
@@ -224,16 +241,21 @@ export default function App() {
         onDelete={handleDeleteAccount}
         onRenameThread={handleRenameThread}
         onDeleteThread={handleDeleteThread}
-        onRequestRole={() => setShowRoleModal(true)}
+        onRequestAccess={() => setShowAccessModal(true)}
+        onRefreshProfile={fetchProfile}
+        viewMode={viewMode}
+        onToggleViewMode={() => setViewMode(viewMode === 'admin' ? 'chat' : 'admin')}
+        adminTab={adminTab}
+        onAdminTabChange={setAdminTab}
       />
       <main className="main">
         {!user && (
           <AuthView onLogin={handleLogin} onError={setError} />
         )}
 
-        {user && isAdmin && <AdminPanel user={user} onError={setError} />}
+        {user && isAdmin && viewMode === 'admin' && <AdminPanel user={user} onError={setError} activeTab={adminTab} />}
 
-        {user && !isAdmin && (
+        {user && showChat && (
           <div className="content-grid single">
             <ChatView
               messages={messages}
@@ -248,14 +270,14 @@ export default function App() {
           </div>
         )}
 
-        {showRoleModal && (
+        {showAccessModal && (
             <div className="auth-container" style={{zIndex: 200, background: 'rgba(0,0,0,0.5)'}}>
                 <div className="auth-card-modern" style={{maxWidth: 400}}>
-                    <h3 className="auth-title" style={{fontSize: 20}}>Request Role Change</h3>
+                    <h3 className="auth-title" style={{fontSize: 20}}>Request Privacy Level Change</h3>
                     <div className="input-group">
-                        <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>New Role</label>
-                        <select value={requestRole} onChange={e => setRequestRole(e.target.value)} className="auth-input">
-                            {ROLE_OPTIONS.filter(r => r !== 'admin').map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                        <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>Desired Privacy Level</label>
+                        <select value={requestPrivacyLevel} onChange={e => setRequestPrivacyLevel(e.target.value)} className="auth-input">
+                            {PRIVACY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
                     </div>
                     <div className="input-group" style={{marginTop: 10}}>
@@ -268,8 +290,8 @@ export default function App() {
                         />
                     </div>
                     <div className="auth-actions" style={{marginTop: 20, gap: 10, justifyContent: 'flex-end'}}>
-                        <button className="btn-reject" onClick={() => setShowRoleModal(false)}>Cancel</button>
-                        <button className="btn-approve" onClick={handleRequestRoleChange}>Submit</button>
+                        <button className="btn-reject" onClick={() => setShowAccessModal(false)}>Cancel</button>
+                        <button className="btn-approve" onClick={handleRequestAccessChange}>Submit</button>
                     </div>
                 </div>
             </div>

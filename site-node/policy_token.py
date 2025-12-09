@@ -149,26 +149,79 @@ class PolicyTokenVerifier:
 
 
 def create_default_token(privacy_level: str = None, role: str = None) -> PolicyToken:
+
+
     """
+
+
     Creates a default policy token for local testing.
+
+
     
+
+
     Args:
-        privacy_level: Privacy level to use (defaults to config default)
+
+
+        privacy_level: Privacy level to use (defaults to role's level or config default)
+
+
         role: User role to use (defaults to config default)
+
+
         
+
+
     Returns:
+
+
         A default PolicyToken
+
+
     """
+
+
     role = role or config.DEFAULT_ROLE
-    privacy_level = privacy_level or config.DEFAULT_PRIVACY_LEVEL
+
+
     
+
+
+    if privacy_level is None:
+
+
+        privacy_level = config.ROLE_PRIVACY_LEVEL.get(role, config.DEFAULT_PRIVACY_LEVEL)
+
+
+    
+
+
     return PolicyToken(
+
+
         user_id="local_test_user",
+
+
         role=role,
+
+
         allowed_kb_levels=config.ROLE_KB_ACCESS.get(role, ['KB1']),
+
+
         privacy_level=privacy_level,
+
+
         epsilon=1.0,
+
+
         site_id=config.SITE_ID,
+
+
         timestamp="",
+
+
         signature=None
+
+
     )
+

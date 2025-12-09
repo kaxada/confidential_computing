@@ -26,15 +26,15 @@ def main():
         "--role", 
         type=str, 
         default=config.DEFAULT_ROLE,
-        choices=["student", "collaborator", "staff", "pi", "researcher"],
+        choices=["pi", "admin", "researcher", "clinician", "analyst", "auditor", "student", "intern"],
         help="User role for KB access control"
     )
     parser.add_argument(
         "--privacy-level",
         type=str,
-        default=config.DEFAULT_PRIVACY_LEVEL,
+        default=None,
         choices=["none", "low", "moderate", "high"],
-        help="Privacy level for differential privacy"
+        help="Privacy level for differential privacy (defaults to role's assigned level)"
     )
     parser.add_argument(
         "--user-id",
@@ -51,6 +51,10 @@ def main():
     )
     
     args = parser.parse_args()
+
+    # Determine privacy level: explicitly provided > role default > system default
+    if args.privacy_level is None:
+        args.privacy_level = config.ROLE_PRIVACY_LEVEL.get(args.role, config.DEFAULT_PRIVACY_LEVEL)
     
     # Create policy token based on CLI arguments
     policy_token = create_default_token(

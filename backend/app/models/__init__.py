@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -14,6 +14,10 @@ class Role(str, Enum):
     RESEARCHER = "researcher"
     STUDENT = "student"
     PI = "pi"
+    INTERN = "intern"
+    AUDITOR = "auditor"
+    CLINICIAN = "clinician"
+    ANALYST = "analyst"
 
     @classmethod
     def from_str(cls, value: str) -> "Role":
@@ -49,7 +53,10 @@ class User(Base):
     first_name = Column(String(255), nullable=True)
     last_name = Column(String(255), nullable=True)
     requested_role = Column(role_enum(), nullable=False, default=Role.RESEARCHER)
+    requested_privacy_level = Column(String(50), nullable=True)
     role = Column(role_enum(), nullable=True)
+    temporary_role = Column(role_enum(), nullable=True)
+    temporary_privacy_level = Column(String(50), nullable=True)
     role_expires_at = Column(DateTime(timezone=True), nullable=True)
     request_reason = Column(Text, nullable=True)
     approved = Column(Integer, default=0, nullable=False)
@@ -57,6 +64,32 @@ class User(Base):
 
     threads = relationship("ChatThread", back_populates="user")
     logs = relationship("UserLog", back_populates="user", cascade="all, delete-orphan")
+
+    @property
+    def effective_role(self) -> Role:
+        """Return the current active role (identity)."""
+        return self.role or self.requested_role
+
+    @property
+    def effective_privacy_level(self) -> str:
+        """Return the active privacy level, checking temporary overrides."""
+        # Avoid circular imports by importing here or assuming config availability
+        from app.core.config import ROLE_METADATA, settings
+
+        # Check temporary override
+        if self.temporary_privacy_level and self.role_expires_at:
+            now = datetime.now(timezone.utc)
+            expires_at = self.role_expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+            if now < expires_at:
+                return self.temporary_privacy_level
+
+        # Fallback to role-based privacy
+        role_val = self.effective_role.value
+        role_meta = ROLE_METADATA.get(role_val)
+        return (role_meta or {}).get("privacy_level") or settings.default_privacy_level
 
 
 class UserLog(Base):
@@ -66,6 +99,7 @@ class UserLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     event = Column(String(50), nullable=False)
     details = Column(Text, nullable=True)
+    request_metadata = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="logs")

@@ -44,14 +44,17 @@ class MessageResponse(BaseModel):
     content: str
 
 
-class RoleChangeRequest(BaseModel):
-    role: str
+class AccessChangeRequest(BaseModel):
+    role: Optional[str] = None
+    privacy_level: Optional[str] = None
     reason: Optional[str] = None
 
 
-class AdminRoleUpdateRequest(BaseModel):
-    role: str
+class AdminAccessUpdateRequest(BaseModel):
+    role: Optional[str] = None
+    privacy_level: Optional[str] = None
     expires_at: Optional[datetime] = None
+    duration_minutes: Optional[float] = None
 
 
 

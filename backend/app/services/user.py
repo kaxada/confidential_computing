@@ -75,15 +75,41 @@ def list_all_users(session: Session) -> List[User]:
     return list(session.execute(select(User)).scalars().all())
 
 
+from app.core.config import ROLE_METADATA
+
 def approve_user(
     session: Session, user_id: int, role: Role, expires_at: Optional[datetime] = None
 ) -> Optional[User]:
     user = session.get(User, user_id)
     if not user:
         return None
-    user.role = role
-    user.approved = 1
-    user.role_expires_at = expires_at
+    
+    if not user.approved:
+        # First approval: Always permanent base role
+        user.role = role
+        user.temporary_role = None
+        user.temporary_privacy_level = None
+        user.role_expires_at = None
+        user.approved = 1
+        user.requested_role = role
+    else:
+        # Already approved
+        if expires_at:
+            # Temporary Access Grant
+            # We treat the 'role' argument as the target privacy profile
+            role_str = role.value
+            target_privacy = ROLE_METADATA.get(role_str, {}).get("privacy_level", "moderate")
+            
+            user.temporary_privacy_level = target_privacy
+            user.role_expires_at = expires_at
+        else:
+            # Permanent update
+            user.role = role
+            user.temporary_role = None
+            user.temporary_privacy_level = None
+            user.role_expires_at = None
+            user.requested_role = role
+
     session.add(user)
     session.commit()
     session.refresh(user)

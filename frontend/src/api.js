@@ -35,7 +35,7 @@ export const api = {
       removePending: (userId, token) => request(`/admin/pending/${userId}`, { method: 'DELETE', token }),
       users: (token) => request('/admin/users', { token }),
       logs: (token) => request('/admin/logs', { token }),
-      updateRole: (userId, role, expiresAt, token) => request(`/admin/users/${userId}/role`, { method: 'PUT', body: { role, expires_at: expiresAt }, token }),
+      updateRole: (userId, role, durationMinutes, token) => request(`/admin/users/${userId}/role`, { method: 'PUT', body: { role, duration_minutes: durationMinutes }, token }),
       deleteUser: (userId, token) => request(`/admin/users/${userId}`, { method: 'DELETE', token }),
   },
 

@@ -19,8 +19,15 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   
   const [showRoleModal, setShowRoleModal] = useState(false)
-  const [requestRole, setRequestRole] = useState(ROLE_OPTIONS[0])
+  const [requestRole, setRequestRole] = useState('student') // Default to most restricted
   const [requestReason, setRequestReason] = useState('')
+
+  const PRIVACY_OPTIONS = [
+    { label: 'Restricted Access (High Privacy)', value: 'student' },
+    { label: 'Balanced Privacy (Moderate)', value: 'auditor' },
+    { label: 'Expanded Access (Low Privacy)', value: 'researcher' },
+    { label: 'Full Access (No Privacy)', value: 'pi' },
+  ]
 
   const SESSION_DURATION = 60 * 1000 // 1 minute
 
@@ -96,6 +103,9 @@ export default function App() {
             first_name: data.first_name,
             last_name: data.last_name,
             name: newUserName,
+            role: data.role,
+            base_role: data.base_role,
+            role_expires_at: data.role_expires_at,
         }))
       } catch (err) {
         handleLogout()
@@ -251,11 +261,11 @@ export default function App() {
         {showRoleModal && (
             <div className="auth-container" style={{zIndex: 200, background: 'rgba(0,0,0,0.5)'}}>
                 <div className="auth-card-modern" style={{maxWidth: 400}}>
-                    <h3 className="auth-title" style={{fontSize: 20}}>Request Role Change</h3>
+                    <h3 className="auth-title" style={{fontSize: 20}}>Request Privacy Level Change</h3>
                     <div className="input-group">
-                        <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>New Role</label>
+                        <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>Desired Privacy Level</label>
                         <select value={requestRole} onChange={e => setRequestRole(e.target.value)} className="auth-input">
-                            {ROLE_OPTIONS.filter(r => r !== 'admin').map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                            {PRIVACY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
                     </div>
                     <div className="input-group" style={{marginTop: 10}}>

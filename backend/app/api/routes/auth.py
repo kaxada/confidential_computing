@@ -49,26 +49,38 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
     
     log_event(session, user.id, "login")
     
+    effective_role_value = user.effective_role.value
+
     token = create_token(
         {
             "sub": str(user.id),
-            "role": user.role.value if user.role else user.requested_role.value,
+            "role": effective_role_value,
         }
     )
-    return {"token": token, "role": user.role.value if user.role else None}
+    return {"token": token, "role": effective_role_value}
 
 
 @router.get("/me")
 def me(user: User = Depends(require_approved)):
-    access_payload = get_access_payload(user.role or user.requested_role)
+    access_payload = get_access_payload(user.effective_role)
+    # Override privacy level in the payload if a temporary one is active
+    current_privacy = user.effective_privacy_level
+    if current_privacy != access_payload.get("privacy_level"):
+        # We need to fetch the label for this privacy level
+        from app.core.config import PRIVACY_METADATA
+        p_meta = PRIVACY_METADATA.get(current_privacy, {})
+        access_payload["privacy_level"] = current_privacy
+        access_payload["privacy_label"] = p_meta.get("label", current_privacy)
+
     return {
         "id": user.id,
         "email": user.email,
         "first_name": user.first_name,
         "last_name": user.last_name,
         "requested_role": user.requested_role.value,
-        "role": user.role.value if user.role else None,
+        "role": user.effective_role.value,
         "role_expires_at": user.role_expires_at,
+        "temporary_privacy_level": user.temporary_privacy_level,
         "approved": bool(user.approved),
         "created_at": user.created_at,
         **access_payload,

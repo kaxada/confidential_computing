@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -28,6 +30,7 @@ def get_all_users(session: Session = Depends(get_session), user: User = Depends(
             "first_name": u.first_name,
             "last_name": u.last_name,
             "role": u.role.value if u.role else None,
+            "base_role": u.role.value if u.role else None,
             "requested_role": u.requested_role.value,
             "role_expires_at": u.role_expires_at,
             "request_reason": u.request_reason,
@@ -65,11 +68,22 @@ def update_user_role(
     except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
     
-    updated = approve_user(session, user_id, role, payload.expires_at)
+    expires_at = payload.expires_at
+    if payload.duration_minutes is not None:
+        if not (0.25 <= payload.duration_minutes <= 60):
+             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Duration must be between 0.25 and 60 minutes")
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=payload.duration_minutes)
+
+    updated = approve_user(session, user_id, role, expires_at)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
-    log_event(session, admin.id, "admin_update_role", {"target_user_id": user_id, "new_role": role.value})
+    log_event(session, admin.id, "admin_update_role", {
+        "target_user_id": user_id, 
+        "new_role": role.value,
+        "duration": payload.duration_minutes,
+        "expires_at": str(expires_at) if expires_at else None
+    })
     return {"status": "updated", "role": updated.role.value, "expires_at": updated.role_expires_at}
 
 

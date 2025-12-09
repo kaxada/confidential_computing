@@ -52,6 +52,7 @@ class RoleChangeRequest(BaseModel):
 class AdminRoleUpdateRequest(BaseModel):
     role: str
     expires_at: Optional[datetime] = None
+    duration_minutes: Optional[float] = None
 
 
 

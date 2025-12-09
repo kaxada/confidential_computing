@@ -20,7 +20,7 @@ def get_current_user(session: Session = Depends(get_session), creds: HTTPAuthori
 
 def require_role(role: Role):
     def _checker(user: User = Depends(get_current_user)) -> User:
-        if user.role != role:
+        if user.effective_role != role:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
         return user
 

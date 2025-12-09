@@ -1,13 +1,48 @@
 import { useEffect, useState } from 'react'
 import { api, ROLE_OPTIONS } from '../api'
 
+export function ExpiryTimer({ expiresAt }) {
+    const [timeLeft, setTimeLeft] = useState('')
+
+    useEffect(() => {
+        if (!expiresAt) return
+
+        const update = () => {
+            const now = new Date()
+            const expiry = new Date(expiresAt)
+            const diff = expiry - now
+
+            if (diff <= 0) {
+                setTimeLeft('Expired')
+                return
+            }
+
+            const minutes = Math.floor(diff / 60000)
+            const seconds = Math.floor((diff % 60000) / 1000)
+            
+            if (minutes > 0) {
+                setTimeLeft(`${minutes}m ${seconds}s`)
+            } else {
+                setTimeLeft(`${seconds}s`)
+            }
+        }
+
+        update()
+        const interval = setInterval(update, 1000)
+        return () => clearInterval(interval)
+    }, [expiresAt])
+
+    if (!expiresAt) return 'Permanent'
+    return <span style={{color: timeLeft === 'Expired' ? 'var(--text-secondary)' : 'var(--warning-text, orange)', fontWeight: 500}}>{timeLeft}</span>
+}
+
 export default function AdminPanel({ user, onError }) {
   const [tab, setTab] = useState('users')
   const [users, setUsers] = useState([])
   const [logs, setLogs] = useState([])
   const [selectedUser, setSelectedUser] = useState(null)
   const [role, setRole] = useState('researcher')
-  const [expiresAt, setExpiresAt] = useState('')
+  const [duration, setDuration] = useState('')
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -33,8 +68,13 @@ export default function AdminPanel({ user, onError }) {
 
   useEffect(() => {
       if (selectedUser) {
-          setRole(selectedUser.role || selectedUser.requested_role || 'researcher')
-          setExpiresAt(selectedUser.role_expires_at ? selectedUser.role_expires_at.split('T')[0] : '')
+          // Prefer requested_role so the admin sees what the user wants
+          const targetRole = selectedUser.requested_role || selectedUser.role || 'researcher'
+          setRole(targetRole)
+          
+          // If approved user has a different requested role, assume temporary request -> default to 60m
+          const isPrivacyRequest = selectedUser.approved && selectedUser.requested_role && selectedUser.requested_role !== selectedUser.role
+          setDuration(isPrivacyRequest ? '60' : '')
       }
   }, [selectedUser])
 
@@ -42,8 +82,18 @@ export default function AdminPanel({ user, onError }) {
     if (!selectedUser) return
     try {
       setBusy(true)
-      const isoDate = expiresAt ? new Date(expiresAt).toISOString() : null
-      await api.admin.updateRole(selectedUser.id, role, isoDate, user.token)
+      let durationMinutes = null
+      if (duration) {
+          const minutes = parseFloat(duration)
+          if (isNaN(minutes) || minutes < 0.25 || minutes > 60) {
+              alert("Duration must be between 0.25 and 60 minutes")
+              setBusy(false)
+              return
+          }
+          durationMinutes = minutes
+      }
+      
+      await api.admin.updateRole(selectedUser.id, role, durationMinutes, user.token)
       setStatus('User updated.')
       setSelectedUser(null)
       await loadData()
@@ -140,7 +190,7 @@ export default function AdminPanel({ user, onError }) {
                                   }
                               </td>
                               <td style={{padding: 10}}>
-                                  {u.role_expires_at ? new Date(u.role_expires_at).toLocaleDateString() : 'Permanent'}
+                                  <ExpiryTimer expiresAt={u.role_expires_at} />
                               </td>
                               <td style={{padding: 10}}>
                                   {!u.approved && (
@@ -186,30 +236,61 @@ export default function AdminPanel({ user, onError }) {
       {selectedUser && (
           <div className="auth-container" style={{zIndex: 200, background: 'rgba(0,0,0,0.5)'}}>
               <div className="auth-card-modern" style={{maxWidth: 500}}>
-                  <h3 className="auth-title" style={{fontSize: 20}}>Edit User Role</h3>
-                  <p className="auth-subtitle" style={{marginBottom: 20}}>{selectedUser.email}</p>
+                  <h3 className="auth-title" style={{fontSize: 20}}>
+                      {selectedUser.approved && selectedUser.requested_role !== selectedUser.role 
+                        ? 'Review Privacy Request' 
+                        : 'Edit User Role'}
+                  </h3>
+                  <p className="auth-subtitle" style={{marginBottom: 20}}>
+                    {selectedUser.email}<br/>
+                    <span style={{fontSize: 12, color: 'var(--text-secondary)'}}>
+                        Current Base Role: {selectedUser.role || 'None'}
+                        {selectedUser.role !== selectedUser.requested_role && (
+                            <><br/>Requested Change: {selectedUser.requested_role}</>
+                        )}
+                    </span>
+                    {selectedUser.request_reason && (
+                        <div style={{marginTop: 8, padding: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 4, fontSize: 13, fontStyle: 'italic'}}>
+                            "{selectedUser.request_reason}"
+                        </div>
+                    )}
+                  </p>
                   
                   <div className="input-group">
-                      <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>Role</label>
+                      <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>Access Profile</label>
                       <select value={role} onChange={e => setRole(e.target.value)} className="auth-input">
                           {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
                       </select>
                   </div>
 
                   <div className="input-group" style={{marginTop: 15}}>
-                      <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>Expiration (Optional)</label>
+                      <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>Duration (Minutes)</label>
                       <input 
-                        type="date" 
+                        type="number" 
+                        min="0.25"
+                        max="60"
+                        step="0.25"
                         className="auth-input" 
-                        value={expiresAt} 
-                        onChange={e => setExpiresAt(e.target.value)}
+                        value={duration} 
+                        onChange={e => setDuration(e.target.value)}
+                        placeholder="Leave blank for permanent change"
                       />
-                      <div style={{fontSize: 12, color: 'var(--text-secondary)', marginTop: 4}}>Leave blank for permanent access</div>
+                      <div style={{fontSize: 12, color: 'var(--text-secondary)', marginTop: 4}}>
+                        Set time (0.25-60 min) to grant temporary privacy access without changing role.
+                        <br/>Leave blank to permanently change the user's role.
+                        {selectedUser.role_expires_at && (
+                             <span style={{display: 'block', marginTop: 2, color: 'var(--warning-text, orange)'}}>
+                               Current Access Expires in: <ExpiryTimer expiresAt={selectedUser.role_expires_at} />
+                             </span>
+                        )}
+                      </div>
                   </div>
 
                   <div className="auth-actions" style={{marginTop: 20, gap: 10, justifyContent: 'flex-end'}}>
                       <button className="btn-reject" onClick={() => setSelectedUser(null)}>Cancel</button>
-                      <button className="btn-approve" disabled={busy} onClick={handleUpdateRole}>Save Changes</button>
+                      <button className="btn-approve" disabled={busy} onClick={handleUpdateRole}>
+                          {duration ? 'Grant Temporary Access' : 'Save Permanent Change'}
+                      </button>
                   </div>
               </div>
           </div>

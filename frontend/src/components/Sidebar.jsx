@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { ExpiryTimer } from './AdminPanel' // Import ExpiryTimer
 
 function Icon({ children, size = 24, className = "" }) {
   return (
@@ -208,14 +209,15 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                       )}
                     </div>
                   )}
-                  {profile?.role_expires_at && (
+                  {profile?.role_expires_at && profile?.role_expires_at && (
                       <div className="menu-role" style={{fontSize: '11px', color: 'var(--accent)'}}>
-                          Expires: {new Date(profile.role_expires_at).toLocaleDateString()}
+                          <span style={{color: 'var(--text-secondary)'}}>Temporary access expires in </span>
+                          <ExpiryTimer expiresAt={profile.role_expires_at} />
                       </div>
                   )}
                </div>
                <div className="menu-divider"></div>
-               <button className="menu-item" onClick={onRequestRole}>Request Role Change</button>
+               <button className="menu-item" onClick={onRequestRole}>Request Privacy Change</button>
                <button className="menu-item" onClick={onLogout}>Log out</button>
                <button className="menu-item danger" onClick={onDelete}>Delete account</button>
             </div>

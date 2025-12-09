@@ -68,14 +68,33 @@ DEFAULT_TOP_K = 3
 ENABLE_POLICY_VERIFICATION = os.getenv("ENABLE_POLICY_VERIFICATION", "false").lower() == "true"
 POLICY_TOKEN_PUBLIC_KEY_PATH = os.getenv("POLICY_TOKEN_PUBLIC_KEY_PATH", "./keys/policy_public_key.pem")
 
+# --- Privacy Level Access Definition ---
+# Defines which KB levels correspond to each privacy level
+PRIVACY_LEVEL_KB_ACCESS = {
+    "none": ["KB1", "KB2", "KB3", "KB4"],  # Full access
+    "low": ["KB1", "KB2", "KB3"],           # Access decreases by one
+    "moderate": ["KB1", "KB2"],             # Access decreases by one
+    "high": ["KB1"]                         # Most restricted
+}
+
+# --- Role Privacy Configuration ---
+# Assigns a privacy level to each role (8 roles total)
+ROLE_PRIVACY_LEVEL = {
+    "pi": "none",
+    "admin": "none",
+    "researcher": "low",
+    "clinician": "low",
+    "analyst": "moderate",
+    "auditor": "moderate",
+    "student": "high",
+    "intern": "high"
+}
+
 # --- Knowledge Base Access Levels ---
-# Defines which KB levels each role can access
+# Derived from ROLE_PRIVACY_LEVEL and PRIVACY_LEVEL_KB_ACCESS
 ROLE_KB_ACCESS = {
-    "student": ["KB1"],           # Most restricted, heavily anonymized
-    "collaborator": ["KB1", "KB2"],  # Some access to less anonymized data
-    "staff": ["KB1", "KB2", "KB3"],  # Site staff with more access
-    "pi": ["KB1", "KB2", "KB3", "KB4"],  # Principal investigators, full access
-    "researcher": ["KB1", "KB2", "KB3", "KB4"]  # Authorized researchers
+    role: PRIVACY_LEVEL_KB_ACCESS[level]
+    for role, level in ROLE_PRIVACY_LEVEL.items()
 }
 
 # Default role if not specified

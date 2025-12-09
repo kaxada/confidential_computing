@@ -14,6 +14,10 @@ class Role(str, Enum):
     RESEARCHER = "researcher"
     STUDENT = "student"
     PI = "pi"
+    INTERN = "intern"
+    AUDITOR = "auditor"
+    CLINICIAN = "clinician"
+    ANALYST = "analyst"
 
     @classmethod
     def from_str(cls, value: str) -> "Role":

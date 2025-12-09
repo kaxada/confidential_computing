@@ -77,8 +77,8 @@ python main.py
 # Specify role and privacy level
 python main.py --role pi --privacy-level low --user-id researcher_001
 
-# Available roles: student, collaborator, staff, pi, researcher
-# Available privacy levels: none, low, moderate, high
+# Available roles: pi, admin, researcher, clinician, analyst, auditor, student, intern
+# Available privacy levels: none, low, moderate, high (defaults to role's assigned level if not specified)
 ```
 
 ### API (for Hub Communication)
@@ -125,10 +125,10 @@ curl -X 'POST' \
 
 ### 2. Role-Based Access Control (RBAC)
 
-* **Student** : Access to KB1 only (heavily anonymized)
-* **Collaborator** : KB1-KB2 (some detail)
-* **Staff** : KB1-KB3 (moderate detail)
-* **PI/Researcher** : KB1-KB4 (full access)
+* **Student / Intern** : Access to KB1 only (High Privacy)
+* **Analyst / Auditor** : KB1-KB2 (Moderate Privacy)
+* **Researcher / Clinician** : KB1-KB3 (Low Privacy)
+* **PI / Admin** : KB1-KB4 (None/Full Access)
 
 ### 3. PHI/PII Scrubbing
 

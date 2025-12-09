@@ -125,6 +125,9 @@ def logout(session: Session = Depends(get_session), user: User = Depends(require
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 def delete_me(session: Session = Depends(get_session), user: User = Depends(require_approved)):
+    if user.role == Role.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins cannot delete their account")
+
     deleted = delete_user_and_threads(session, user.id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

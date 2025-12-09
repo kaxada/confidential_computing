@@ -120,6 +120,11 @@ body {
   white-space: nowrap;
 }
 .nav-link:hover { background: var(--hover-bg); }
+.nav-link.active {
+  background: var(--active-bg);
+  font-weight: 600;
+  color: var(--text);
+}
 .nav-link span { overflow: hidden; text-overflow: ellipsis; }
 
 .section-label {

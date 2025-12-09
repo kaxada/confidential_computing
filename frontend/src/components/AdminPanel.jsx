@@ -62,8 +62,10 @@ export function ExpiryTimer({ expiresAt, label, onExpire }) {
     )
 }
 
-export default function AdminPanel({ user, onError }) {
-  const [tab, setTab] = useState('pending') // Default to pending as requested
+export default function AdminPanel({ user, onError, activeTab }) {
+  // const [tab, setTab] = useState('pending') // Controlled by parent
+  const tab = activeTab || 'pending'
+  
   const [users, setUsers] = useState([])
   const [pendingRequests, setPendingRequests] = useState([])
   const [logs, setLogs] = useState([])
@@ -233,42 +235,11 @@ export default function AdminPanel({ user, onError }) {
   return (
     <div className="admin-container">
       <div className="admin-header">
-        <h2 className="admin-title">Admin Dashboard</h2>
-        <div className="admin-tabs" style={{display: 'flex', gap: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0}}>
-            <button 
-                className={`tab-btn ${tab === 'pending' ? 'active' : ''}`}
-                onClick={() => setTab('pending')}
-                style={{
-                    background: 'transparent', border: 'none', padding: '10px 0', 
-                    borderBottom: tab === 'pending' ? '2px solid var(--text)' : '2px solid transparent',
-                    fontWeight: tab === 'pending' ? 600 : 400, cursor: 'pointer', color: 'var(--text)'
-                }}
-            >
-                Pending Approvals
-            </button>
-            <button 
-                className={`tab-btn ${tab === 'users' ? 'active' : ''}`}
-                onClick={() => setTab('users')}
-                style={{
-                    background: 'transparent', border: 'none', padding: '10px 0', 
-                    borderBottom: tab === 'users' ? '2px solid var(--text)' : '2px solid transparent',
-                    fontWeight: tab === 'users' ? 600 : 400, cursor: 'pointer', color: 'var(--text)'
-                }}
-            >
-                Users
-            </button>
-            <button 
-                className={`tab-btn ${tab === 'logs' ? 'active' : ''}`}
-                onClick={() => setTab('logs')}
-                style={{
-                    background: 'transparent', border: 'none', padding: '10px 0', 
-                    borderBottom: tab === 'logs' ? '2px solid var(--text)' : '2px solid transparent',
-                    fontWeight: tab === 'logs' ? 600 : 400, cursor: 'pointer', color: 'var(--text)'
-                }}
-            >
-                Audit Logs
-            </button>
-        </div>
+        <h2 className="admin-title">
+            {tab === 'pending' && 'Pending Approvals'}
+            {tab === 'users' && 'User Management'}
+            {tab === 'logs' && 'Audit Logs'}
+        </h2>
       </div>
 
       {tab === 'pending' && (

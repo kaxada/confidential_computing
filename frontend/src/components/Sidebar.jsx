@@ -118,12 +118,13 @@ function ThreadItem({ thread, active, onSelect, onRename, onDelete }) {
   )
 }
 
-export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestAccess, onRefreshProfile }) {
+export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestAccess, onRefreshProfile, viewMode, onToggleViewMode, adminTab, onAdminTabChange }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
   const roleLabel = profile?.role_label || profile?.role || user?.role
   const privacyLabel = profile?.privacy_label || profile?.privacy_level
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -188,7 +189,40 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
           )}
         </>
       ) : (
-        <div className="muted">{!collapsed && 'Admin panel'}</div>
+        <>
+            <div className="nav-links">
+                <button
+                    className={`nav-link ${adminTab === 'pending' ? 'active' : ''}`}
+                    onClick={() => onAdminTabChange('pending')}
+                    title="Pending Approvals"
+                >
+                    <Icon>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" />
+                    </Icon>
+                    {!collapsed && <span>Pending Approvals</span>}
+                </button>
+                <button
+                    className={`nav-link ${adminTab === 'users' ? 'active' : ''}`}
+                    onClick={() => onAdminTabChange('users')}
+                    title="Users"
+                >
+                    <Icon>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" stroke="currentColor" />
+                    </Icon>
+                    {!collapsed && <span>Users</span>}
+                </button>
+                <button
+                    className={`nav-link ${adminTab === 'logs' ? 'active' : ''}`}
+                    onClick={() => onAdminTabChange('logs')}
+                    title="Audit Logs"
+                >
+                    <Icon>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" stroke="currentColor" />
+                    </Icon>
+                    {!collapsed && <span>Audit Logs</span>}
+                </button>
+            </div>
+        </>
       )}
       {user && (
         <div className="sidebar-footer" ref={menuRef}>
@@ -220,9 +254,18 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                   )}
                </div>
                <div className="menu-divider"></div>
-               <button className="menu-item" onClick={onRequestAccess}>Request Privacy Change</button>
+               {isAdmin && (
+                   <button className="menu-item" onClick={onToggleViewMode}>
+                       Switch to {viewMode === 'admin' ? 'Chat' : 'Admin'}
+                   </button>
+               )}
+               {!isAdmin && (
+                   <button className="menu-item" onClick={onRequestAccess}>Request Privacy Change</button>
+               )}
                <button className="menu-item" onClick={onLogout}>Log out</button>
-               <button className="menu-item danger" onClick={onDelete}>Delete account</button>
+               {!isAdmin && (
+                   <button className="menu-item danger" onClick={onDelete}>Delete account</button>
+               )}
             </div>
           )}
           <button className={`profile-btn ${menuOpen ? 'active' : ''}`} onClick={handleProfileClick} title="User menu">

@@ -21,6 +21,8 @@ export default function App() {
   const [showAccessModal, setShowAccessModal] = useState(false)
   const [requestPrivacyLevel, setRequestPrivacyLevel] = useState('high')
   const [requestReason, setRequestReason] = useState('')
+  const [viewMode, setViewMode] = useState('admin') // 'admin' or 'chat' for admins
+  const [adminTab, setAdminTab] = useState('pending') // 'pending', 'users', 'logs'
 
   const PRIVACY_OPTIONS = [
     { label: 'High Privacy', value: 'high' },
@@ -32,6 +34,7 @@ export default function App() {
   const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes
 
   const isAdmin = user?.role === 'admin'
+  const showChat = !isAdmin || viewMode === 'chat'
 
   useEffect(() => {
     const stored = localStorage.getItem('cc_session')
@@ -50,7 +53,7 @@ export default function App() {
   }, [])
 
   const loadThreads = async (token) => {
-    if (!token || isAdmin) return
+    if (!token || (isAdmin && viewMode !== 'chat')) return
     try {
       const data = await api.threads(token)
       setThreads(data)
@@ -76,17 +79,17 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (user?.token && !isAdmin) {
+    if (user?.token && showChat) {
       loadThreads(user.token)
     }
-  }, [user?.token, isAdmin])
+  }, [user?.token, isAdmin, viewMode])
 
   useEffect(() => {
-    if (activeThreadId && user?.token && !isAdmin) {
+    if (activeThreadId && user?.token && showChat) {
       setLatestResponseId(null)
       loadMessages(activeThreadId, user.token)
     }
-  }, [activeThreadId, user?.token, isAdmin])
+  }, [activeThreadId, user?.token, isAdmin, viewMode])
 
   const fetchProfile = async () => {
     if (!user?.token) {
@@ -165,6 +168,8 @@ export default function App() {
     setMessages([])
     setActiveThreadId(null)
     setError(null)
+    // Default admin view to dashboard
+    if (role === 'admin') setViewMode('admin')
   }
 
   const handleLogout = async () => {
@@ -227,7 +232,7 @@ export default function App() {
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         user={user}
         profile={profile}
-        showThreads={!isAdmin && !!user}
+        showThreads={showChat}
         threads={threads}
         activeThreadId={activeThreadId}
         onSelectThread={setActiveThreadId}
@@ -238,15 +243,19 @@ export default function App() {
         onDeleteThread={handleDeleteThread}
         onRequestAccess={() => setShowAccessModal(true)}
         onRefreshProfile={fetchProfile}
+        viewMode={viewMode}
+        onToggleViewMode={() => setViewMode(viewMode === 'admin' ? 'chat' : 'admin')}
+        adminTab={adminTab}
+        onAdminTabChange={setAdminTab}
       />
       <main className="main">
         {!user && (
           <AuthView onLogin={handleLogin} onError={setError} />
         )}
 
-        {user && isAdmin && <AdminPanel user={user} onError={setError} />}
+        {user && isAdmin && viewMode === 'admin' && <AdminPanel user={user} onError={setError} activeTab={adminTab} />}
 
-        {user && !isAdmin && (
+        {user && showChat && (
           <div className="content-grid single">
             <ChatView
               messages={messages}

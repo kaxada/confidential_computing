@@ -14,10 +14,9 @@ echo "[deploy_hub] Using bundle: $TAR_PATH"
 echo "[deploy_hub] Installing system dependencies (Amazon Linux 2023)"
 
 # ----------------------------
-# Install Python tools ONLY
-# (Do NOT install node — AL2023 AMI already has Node 20 from NodeSource)
+# Install Python tools, Nginx, Node.js, Rsync
 # ----------------------------
-sudo dnf install -y python3 python3-pip python3-virtualenv
+sudo dnf install -y python3 python3-pip python3-virtualenv nginx nodejs rsync
 
 # ----------------------------
 # Install PostgreSQL 15 (AL2023)
@@ -46,11 +45,28 @@ sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}';
   || sudo -u postgres createdb "${DB_NAME}"
 
 # ----------------------------
-# Deploy bundle
+# Deploy bundle (Sync)
 # ----------------------------
 sudo mkdir -p "$APP_DIR"
 
-sudo tar -xzf "$TAR_PATH" -C "$APP_DIR" --strip-components=0
+# Extract to temporary directory first
+TEMP_DIR=$(mktemp -d)
+echo "[deploy_hub] Extracting to $TEMP_DIR"
+tar -xzf "$TAR_PATH" -C "$TEMP_DIR"
+
+echo "[deploy_hub] Syncing to $APP_DIR (removing stale files)"
+# Sync and delete files not in source, but preserve generated/heavy folders
+sudo rsync -a --delete \
+  --exclude 'venv' \
+  --exclude 'backend/venv' \
+  --exclude 'backend/.env' \
+  --exclude 'backend/__pycache__' \
+  --exclude 'frontend/node_modules' \
+  --exclude 'frontend/.env.production' \
+  --exclude 'frontend/dist' \
+  "$TEMP_DIR/" "$APP_DIR/"
+
+rm -rf "$TEMP_DIR"
 sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
 
 # ----------------------------
@@ -78,12 +94,55 @@ EOF"
 fi
 
 # ----------------------------
+# Frontend Build
+# ----------------------------
+echo "[deploy_hub] Building Frontend"
+cd "$FRONTEND_DIR"
+# Configure for Nginx proxy (relative paths)
+echo "VITE_API_BASE=" > .env.production
+
+# Run npm install/build as the deployment user to avoid permission issues
+# (We assume this script runs as a user who can sudo, or we switch)
+if [ "$USER" == "root" ]; then
+    # If running as root, run npm as DEPLOY_USER
+    sudo -u "$DEPLOY_USER" bash -c "cd $FRONTEND_DIR && npm install && npm run build"
+else
+    npm install
+    npm run build
+fi
+
+# ----------------------------
+# Configure Nginx
+# ----------------------------
+echo "[deploy_hub] Configuring Nginx"
+sudo cp "$APP_DIR/infra/nginx/confidential.conf" /etc/nginx/conf.d/confidential.conf
+
+# Rename default config to avoid conflict if it exists
+if [ -f /etc/nginx/conf.d/default.conf ]; then
+    sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.disabled
+fi
+
+# Ensure Nginx can read the files
+sudo chmod -R 755 "$APP_DIR"
+# Ensure Nginx is allowed to connect to network (SELinux)
+if command -v getsebool &> /dev/null; then
+    sudo setsebool -P httpd_can_network_connect 1 || true
+fi
+
+sudo systemctl enable --now nginx
+sudo systemctl reload nginx
+
+# ----------------------------
 # Systemd service setup
 # ----------------------------
 sudo cp "$APP_DIR/infra/systemd/backend.service" /etc/systemd/system/backend.service
-sudo cp "$APP_DIR/infra/systemd/frontend.service" /etc/systemd/system/frontend.service
+# Remove frontend service if it exists (replaced by Nginx)
+sudo systemctl stop frontend.service || true
+sudo systemctl disable frontend.service || true
+sudo rm -f /etc/systemd/system/frontend.service
+
 sudo systemctl daemon-reload
-sudo systemctl restart backend.service frontend.service
-sudo systemctl enable backend.service frontend.service
+sudo systemctl restart backend.service
+sudo systemctl enable backend.service
 
 echo "[deploy_hub] Done"

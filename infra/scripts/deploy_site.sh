@@ -13,12 +13,12 @@ install_packages() {
   if command -v apt-get >/dev/null 2>&1; then
     echo "[deploy_site] Detected apt-based system"
     sudo apt-get update -y
-    sudo apt-get install -y python3-venv python3-pip
+    sudo apt-get install -y python3-venv python3-pip rsync
   elif command -v yum >/dev/null 2>&1 || command -v dnf >/dev/null 2>&1; then
     echo "[deploy_site] Detected yum/dnf-based system (Amazon Linux/RHEL family)"
     PM="yum"
     command -v dnf >/dev/null 2>&1 && PM="dnf"
-    sudo ${PM} install -y python3 python3-pip python3-virtualenv
+    sudo ${PM} install -y python3 python3-pip python3-virtualenv rsync
   else
     echo "[deploy_site] Unsupported package manager. Install python3 manually." >&2
     exit 1
@@ -29,7 +29,22 @@ echo "[deploy_site] Installing system dependencies"
 install_packages
 
 sudo mkdir -p "$APP_DIR"
-sudo tar -xzf "$TAR_PATH" -C "$APP_DIR" --strip-components=0
+
+# Clean deploy using rsync
+TEMP_DIR=$(mktemp -d)
+echo "[deploy_site] Extracting to $TEMP_DIR"
+tar -xzf "$TAR_PATH" -C "$TEMP_DIR"
+
+echo "[deploy_site] Syncing to $APP_DIR"
+sudo rsync -a --delete \
+  --exclude 'venv-site' \
+  --exclude 'site-node/venv' \
+  --exclude 'site-node/.env' \
+  --exclude 'site-node/data' \
+  --exclude 'site-node/__pycache__' \
+  "$TEMP_DIR/" "$APP_DIR/"
+
+rm -rf "$TEMP_DIR"
 sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
 
 python3 -m venv "$VENV_DIR"
@@ -50,6 +65,15 @@ SITE_ID=site_local
 ENCLAVE_MODE=false
 ENABLE_POLICY_VERIFICATION=false
 EOF
+else
+    if [ -n "${OPENAI_API_KEY:-}" ]; then
+        echo "[deploy_site] Updating OPENAI_API_KEY in .env"
+        if grep -q "OPENAI_API_KEY=" "$SITE_ENV"; then
+            sed -i "s|^OPENAI_API_KEY=.*|OPENAI_API_KEY=$OPENAI_API_KEY|g" "$SITE_ENV"
+        else
+            echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> "$SITE_ENV"
+        fi
+    fi
 fi
 
 sudo cp "$APP_DIR/infra/systemd/site.service" /etc/systemd/system/site.service

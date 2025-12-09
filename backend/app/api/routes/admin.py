@@ -7,14 +7,16 @@ from sqlalchemy.orm import Session
 from app.api.deps.auth import require_role
 from app.core.db import get_session
 from app.models import Role, User, UserLog
-from app.schemas import AdminRoleUpdateRequest, ApproveRequest
+from app.schemas import AdminAccessUpdateRequest, ApproveRequest
 from app.services.log import log_event
 from app.services.user import (
-    approve_user,
+    approve_user_access,
     delete_pending_user,
     delete_user_and_threads,
     list_all_users,
     list_pending_users,
+    list_all_pending_requests,
+    reject_access_request,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -23,6 +25,12 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 @router.get("/users")
 def get_all_users(session: Session = Depends(get_session), user: User = Depends(require_role(Role.ADMIN))):
     users = list_all_users(session)
+    
+    def ensure_utc(dt):
+        if dt and dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
+
     return [
         {
             "id": u.id,
@@ -32,7 +40,7 @@ def get_all_users(session: Session = Depends(get_session), user: User = Depends(
             "role": u.role.value if u.role else None,
             "base_role": u.role.value if u.role else None,
             "requested_role": u.requested_role.value,
-            "role_expires_at": u.role_expires_at,
+            "role_expires_at": ensure_utc(u.role_expires_at),
             "request_reason": u.request_reason,
             "approved": u.approved,
         }
@@ -56,17 +64,19 @@ def get_logs(session: Session = Depends(get_session), user: User = Depends(requi
     ]
 
 
-@router.put("/users/{user_id}/role")
-def update_user_role(
+@router.put("/users/{user_id}/access")
+def update_user_access(
     user_id: int,
-    payload: AdminRoleUpdateRequest,
+    payload: AdminAccessUpdateRequest,
     session: Session = Depends(get_session),
     admin: User = Depends(require_role(Role.ADMIN)),
 ):
-    try:
-        role = Role.from_str(payload.role)
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
+    role_enum_val = None
+    if payload.role:
+        try:
+            role_enum_val = Role.from_str(payload.role)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
     
     expires_at = payload.expires_at
     if payload.duration_minutes is not None:
@@ -74,17 +84,32 @@ def update_user_role(
              raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Duration must be between 0.25 and 60 minutes")
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=payload.duration_minutes)
 
-    updated = approve_user(session, user_id, role, expires_at)
+    updated = approve_user_access(session, user_id, role=role_enum_val, privacy_level=payload.privacy_level, expires_at=expires_at)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
-    log_event(session, admin.id, "admin_update_role", {
+    log_data = {
         "target_user_id": user_id, 
-        "new_role": role.value,
         "duration": payload.duration_minutes,
         "expires_at": str(expires_at) if expires_at else None
-    })
-    return {"status": "updated", "role": updated.role.value, "expires_at": updated.role_expires_at}
+    }
+    if role_enum_val:
+        log_data["new_role"] = role_enum_val.value
+    if payload.privacy_level:
+        log_data["new_privacy_level"] = payload.privacy_level
+        
+    log_event(session, admin.id, "admin_update_access", log_data)
+    
+    expires_at_response = updated.role_expires_at
+    if expires_at_response and expires_at_response.tzinfo is None:
+        expires_at_response = expires_at_response.replace(tzinfo=timezone.utc)
+
+    return {
+        "status": "updated", 
+        "role": updated.role.value if updated.role else None, 
+        "temporary_privacy_level": updated.temporary_privacy_level,
+        "expires_at": expires_at_response
+    }
 
 
 @router.delete("/users/{user_id}")
@@ -103,11 +128,29 @@ def delete_user(
 
 @router.get("/pending")
 def list_pending(session: Session = Depends(get_session), user: User = Depends(require_role(Role.ADMIN))):
-    pending = list_pending_users(session)
+    pending = list_all_pending_requests(session)
     return [
-        {"id": u.id, "email": u.email, "requested_role": u.requested_role.value}
+        {
+            "id": u.id, 
+            "email": u.email, 
+            "requested_role": u.requested_role.value if u.requested_role else None,
+            "role": u.role.value if u.role else None,
+            "requested_privacy_level": u.requested_privacy_level,
+            "request_reason": u.request_reason,
+            "approved": u.approved
+        }
         for u in pending
     ]
+
+
+@router.post("/requests/{user_id}/reject")
+def reject_request(user_id: int, session: Session = Depends(get_session), admin: User = Depends(require_role(Role.ADMIN))):
+    rejected = reject_access_request(session, user_id)
+    if not rejected:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    log_event(session, admin.id, "admin_reject_request", {"target_user_id": user_id})
+    return {"status": "rejected"}
 
 
 @router.post("/approve")
@@ -116,7 +159,7 @@ def approve(payload: ApproveRequest, session: Session = Depends(get_session), us
         role = Role.from_str(payload.role)
     except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
-    updated = approve_user(session, payload.user_id, role)
+    updated = approve_user_access(session, payload.user_id, role=role)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return {"status": "approved", "role": updated.role.value}

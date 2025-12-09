@@ -53,6 +53,7 @@ class User(Base):
     first_name = Column(String(255), nullable=True)
     last_name = Column(String(255), nullable=True)
     requested_role = Column(role_enum(), nullable=False, default=Role.RESEARCHER)
+    requested_privacy_level = Column(String(50), nullable=True)
     role = Column(role_enum(), nullable=True)
     temporary_role = Column(role_enum(), nullable=True)
     temporary_privacy_level = Column(String(50), nullable=True)
@@ -78,7 +79,11 @@ class User(Base):
         # Check temporary override
         if self.temporary_privacy_level and self.role_expires_at:
             now = datetime.now(timezone.utc)
-            if now < self.role_expires_at:
+            expires_at = self.role_expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            
+            if now < expires_at:
                 return self.temporary_privacy_level
 
         # Fallback to role-based privacy

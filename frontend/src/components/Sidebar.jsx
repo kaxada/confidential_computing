@@ -118,7 +118,7 @@ function ThreadItem({ thread, active, onSelect, onRename, onDelete }) {
   )
 }
 
-export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestRole, onRefreshProfile }) {
+export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestAccess, onRefreshProfile }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -220,7 +220,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                   )}
                </div>
                <div className="menu-divider"></div>
-               <button className="menu-item" onClick={onRequestRole}>Request Privacy Change</button>
+               <button className="menu-item" onClick={onRequestAccess}>Request Privacy Change</button>
                <button className="menu-item" onClick={onLogout}>Log out</button>
                <button className="menu-item danger" onClick={onDelete}>Delete account</button>
             </div>

@@ -18,18 +18,15 @@ export default function App() {
   const [profile, setProfile] = useState(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   
-  const [showRoleModal, setShowRoleModal] = useState(false)
-  const [requestRole, setRequestRole] = useState('student')
+  const [showAccessModal, setShowAccessModal] = useState(false)
+  const [requestPrivacyLevel, setRequestPrivacyLevel] = useState('high')
   const [requestReason, setRequestReason] = useState('')
 
   const PRIVACY_OPTIONS = [
-    { label: 'Student (High Privacy)', value: 'student' },
-    { label: 'Intern (High Privacy)', value: 'intern' },
-    { label: 'Auditor (Moderate Privacy)', value: 'auditor' },
-    { label: 'Analyst (Moderate Privacy)', value: 'analyst' },
-    { label: 'Researcher (Low Privacy)', value: 'researcher' },
-    { label: 'Clinician (Low Privacy)', value: 'clinician' },
-    { label: 'PI (No Privacy)', value: 'pi' },
+    { label: 'High Privacy', value: 'high' },
+    { label: 'Moderate Privacy ', value: 'moderate' },
+    { label: 'Low Privacy', value: 'low' },
+    { label: 'No Privacy', value: 'none' },
   ]
 
   const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes
@@ -210,13 +207,14 @@ export default function App() {
     }
   }
 
-  const handleRequestRoleChange = async () => {
+  const handleRequestAccessChange = async () => {
       if (!user?.token) return
       try {
-          await api.requestRole(requestRole, requestReason, user.token)
-          setShowRoleModal(false)
+          // Pass null for role, and the selected privacy level
+          await api.requestAccess(null, requestPrivacyLevel, requestReason, user.token)
+          setShowAccessModal(false)
           setRequestReason('')
-          alert("Role request submitted.")
+          alert("Privacy access request submitted.")
       } catch (e) {
           setError(e.message)
       }
@@ -238,7 +236,7 @@ export default function App() {
         onDelete={handleDeleteAccount}
         onRenameThread={handleRenameThread}
         onDeleteThread={handleDeleteThread}
-        onRequestRole={() => setShowRoleModal(true)}
+        onRequestAccess={() => setShowAccessModal(true)}
         onRefreshProfile={fetchProfile}
       />
       <main className="main">
@@ -263,13 +261,13 @@ export default function App() {
           </div>
         )}
 
-        {showRoleModal && (
+        {showAccessModal && (
             <div className="auth-container" style={{zIndex: 200, background: 'rgba(0,0,0,0.5)'}}>
                 <div className="auth-card-modern" style={{maxWidth: 400}}>
                     <h3 className="auth-title" style={{fontSize: 20}}>Request Privacy Level Change</h3>
                     <div className="input-group">
                         <label style={{fontSize: 14, fontWeight: 500, marginBottom: 4, display: 'block', textAlign: 'left'}}>Desired Privacy Level</label>
-                        <select value={requestRole} onChange={e => setRequestRole(e.target.value)} className="auth-input">
+                        <select value={requestPrivacyLevel} onChange={e => setRequestPrivacyLevel(e.target.value)} className="auth-input">
                             {PRIVACY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
                     </div>
@@ -283,8 +281,8 @@ export default function App() {
                         />
                     </div>
                     <div className="auth-actions" style={{marginTop: 20, gap: 10, justifyContent: 'flex-end'}}>
-                        <button className="btn-reject" onClick={() => setShowRoleModal(false)}>Cancel</button>
-                        <button className="btn-approve" onClick={handleRequestRoleChange}>Submit</button>
+                        <button className="btn-reject" onClick={() => setShowAccessModal(false)}>Cancel</button>
+                        <button className="btn-approve" onClick={handleRequestAccessChange}>Submit</button>
                     </div>
                 </div>
             </div>

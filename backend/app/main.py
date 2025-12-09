@@ -20,6 +20,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup_event():
+    print("Application startup event triggered.")
     # Create tables if not exist and seed admin.
     db.Base.metadata.create_all(bind=db.engine)
     with db.SessionLocal() as session:

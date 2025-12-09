@@ -1,11 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { api, ROLE_OPTIONS } from '../api'
 
-export function ExpiryTimer({ expiresAt }) {
+export function ExpiryTimer({ expiresAt, label, onExpire }) {
     const [timeLeft, setTimeLeft] = useState('')
+    const expiredRef = useRef(false)
 
     useEffect(() => {
-        if (!expiresAt) return
+        if (!expiresAt) {
+            expiredRef.current = false
+            return
+        }
+
+        // Reset expired state if expiresAt changes to a future date
+        if (new Date(expiresAt) > new Date()) {
+             expiredRef.current = false
+        }
 
         const update = () => {
             const now = new Date()
@@ -14,6 +23,10 @@ export function ExpiryTimer({ expiresAt }) {
 
             if (diff <= 0) {
                 setTimeLeft('Expired')
+                if (!expiredRef.current) {
+                    expiredRef.current = true
+                    if (onExpire) onExpire()
+                }
                 return
             }
 
@@ -30,10 +43,16 @@ export function ExpiryTimer({ expiresAt }) {
         update()
         const interval = setInterval(update, 1000)
         return () => clearInterval(interval)
-    }, [expiresAt])
+    }, [expiresAt, onExpire])
 
     if (!expiresAt) return 'Permanent'
-    return <span style={{color: timeLeft === 'Expired' ? 'var(--text-secondary)' : 'var(--warning-text, orange)', fontWeight: 500}}>{timeLeft}</span>
+    if (timeLeft === 'Expired') return null
+    return (
+        <span className="expiry-timer-wrapper">
+            {label && <span className="expiry-label" style={{marginRight: '4px'}}>{label}</span>}
+            <span style={{color: 'var(--warning-text, orange)', fontWeight: 500}}>{timeLeft}</span>
+        </span>
+    )
 }
 
 export default function AdminPanel({ user, onError }) {

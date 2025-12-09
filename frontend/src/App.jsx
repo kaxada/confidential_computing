@@ -91,29 +91,30 @@ export default function App() {
     }
   }, [activeThreadId, user?.token, isAdmin])
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user?.token) {
-        setProfile(null)
-        return
-      }
-      try {
-        const data = await api.me(user.token)
-        setProfile(data)
-        const newUserName = (data.first_name && data.last_name) ? `${data.first_name} ${data.last_name}` : data.email
-        setUser(prevUser => ({
-            ...prevUser,
-            first_name: data.first_name,
-            last_name: data.last_name,
-            name: newUserName,
-            role: data.role,
-            base_role: data.base_role,
-            role_expires_at: data.role_expires_at,
-        }))
-      } catch (err) {
-        handleLogout()
-      }
+  const fetchProfile = async () => {
+    if (!user?.token) {
+      setProfile(null)
+      return
     }
+    try {
+      const data = await api.me(user.token)
+      setProfile(data)
+      const newUserName = (data.first_name && data.last_name) ? `${data.first_name} ${data.last_name}` : data.email
+      setUser(prevUser => ({
+          ...prevUser,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          name: newUserName,
+          role: data.role,
+          base_role: data.base_role,
+          role_expires_at: data.role_expires_at,
+      }))
+    } catch (err) {
+      handleLogout()
+    }
+  }
+
+  useEffect(() => {
     fetchProfile()
   }, [user?.token])
 
@@ -238,6 +239,7 @@ export default function App() {
         onRenameThread={handleRenameThread}
         onDeleteThread={handleDeleteThread}
         onRequestRole={() => setShowRoleModal(true)}
+        onRefreshProfile={fetchProfile}
       />
       <main className="main">
         {!user && (

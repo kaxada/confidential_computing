@@ -118,7 +118,7 @@ function ThreadItem({ thread, active, onSelect, onRename, onDelete }) {
   )
 }
 
-export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestRole }) {
+export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestRole, onRefreshProfile }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -211,8 +211,11 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                   )}
                   {profile?.role_expires_at && profile?.role_expires_at && (
                       <div className="menu-role" style={{fontSize: '11px', color: 'var(--accent)'}}>
-                          <span style={{color: 'var(--text-secondary)'}}>Temporary access expires in </span>
-                          <ExpiryTimer expiresAt={profile.role_expires_at} />
+                          <ExpiryTimer 
+                            expiresAt={profile.role_expires_at} 
+                            label={<span style={{color: 'var(--text-secondary)'}}>Temporary access expires in </span>}
+                            onExpire={onRefreshProfile}
+                          />
                       </div>
                   )}
                </div>

@@ -118,7 +118,7 @@ function ThreadItem({ thread, active, onSelect, onRename, onDelete }) {
   )
 }
 
-export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestAccess, onRefreshProfile, viewMode, onToggleViewMode, adminTab, onAdminTabChange }) {
+export default function Sidebar({ collapsed, onToggleCollapse, user, profile, showThreads = true, threads, activeThreadId, onSelectThread, onNewChat, onLogout, onDelete, onRenameThread, onDeleteThread, onRequestAccess, onRefreshProfile, viewMode, onToggleViewMode, adminTab, onAdminTabChange, isMobile = false, mobileOpen = false, onCloseMobile = () => {} }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -146,11 +146,21 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
     }
   }
 
+  const sidebarClasses = ['sidebar']
+  if (collapsed) sidebarClasses.push('collapsed')
+  if (isMobile) sidebarClasses.push('mobile')
+  if (mobileOpen) sidebarClasses.push('open')
+
+  const handleNavAction = (fn) => {
+    fn()
+    if (isMobile) onCloseMobile()
+  }
+
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={sidebarClasses.join(' ')}>
       <div className="sidebar-header">
         {!collapsed && <div className="logo-text">Confidential Computing</div>}
-        <button className="icon-btn" onClick={onToggleCollapse} aria-label="Toggle sidebar">
+        <button className="icon-btn" onClick={isMobile ? onCloseMobile : onToggleCollapse} aria-label="Toggle sidebar">
           <Icon>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 4.5v15m6-15v15m-10.5-15h15a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25v-10.5a2.25 2.25 0 012.25-2.25z" stroke="currentColor" />
           </Icon>
@@ -161,7 +171,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
           <div className="nav-links">
             <button
               className="nav-link"
-              onClick={onNewChat}
+              onClick={() => handleNavAction(onNewChat)}
               title="New chat"
             >
               <Icon>
@@ -193,7 +203,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
             <div className="nav-links">
                 <button
                     className={`nav-link ${adminTab === 'pending' ? 'active' : ''}`}
-                    onClick={() => onAdminTabChange('pending')}
+                    onClick={() => handleNavAction(() => onAdminTabChange('pending'))}
                     title="Pending Approvals"
                 >
                     <Icon>
@@ -203,7 +213,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                 </button>
                 <button
                     className={`nav-link ${adminTab === 'users' ? 'active' : ''}`}
-                    onClick={() => onAdminTabChange('users')}
+                    onClick={() => handleNavAction(() => onAdminTabChange('users'))}
                     title="Users"
                 >
                     <Icon>
@@ -213,7 +223,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                 </button>
                 <button
                     className={`nav-link ${adminTab === 'logs' ? 'active' : ''}`}
-                    onClick={() => onAdminTabChange('logs')}
+                    onClick={() => handleNavAction(() => onAdminTabChange('logs'))}
                     title="Audit Logs"
                 >
                     <Icon>

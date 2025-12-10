@@ -5,6 +5,7 @@ import ChatView from './components/ChatView'
 import Sidebar from './components/Sidebar'
 import AdminPanel from './components/AdminPanel'
 import Profile from './components/Profile'
+import { useMediaQuery } from './hooks/useMediaQuery'
 
 export default function App() {
   const [user, setUser] = useState(null) // { email, role, token }
@@ -23,6 +24,8 @@ export default function App() {
   const [requestReason, setRequestReason] = useState('')
   const [viewMode, setViewMode] = useState('admin') // 'admin' or 'chat' for admins
   const [adminTab, setAdminTab] = useState('pending') // 'pending', 'users', 'logs'
+  const isMobile = useMediaQuery('(max-width: 960px)')
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
   const PRIVACY_OPTIONS = [
     { label: 'High Privacy', value: 'high' },
@@ -153,6 +156,11 @@ export default function App() {
     setLatestResponseId(null)
   }
 
+  const handleSelectThread = (id) => {
+    setActiveThreadId(id)
+    if (isMobile) setShowMobileSidebar(false)
+  }
+
   const handleLogin = (creds, token, role) => {
     const userData = { 
       email: creds.email, 
@@ -218,24 +226,27 @@ export default function App() {
           // Pass null for role, and the selected privacy level
           await api.requestAccess(null, requestPrivacyLevel, requestReason, user.token)
           setShowAccessModal(false)
-          setRequestReason('')
-          alert("Privacy access request submitted.")
-      } catch (e) {
-          setError(e.message)
-      }
+      setRequestReason('')
+      alert("Privacy access request submitted.")
+    } catch (e) {
+      setError(e.message)
+    }
   }
 
   return (
-    <div className={`app ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+    <div className={`app ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobile ? 'mobile' : ''} ${showMobileSidebar ? 'sidebar-open' : ''}`}>
       <Sidebar
         collapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isMobile={isMobile}
+        mobileOpen={showMobileSidebar}
+        onCloseMobile={() => setShowMobileSidebar(false)}
         user={user}
         profile={profile}
         showThreads={showChat}
         threads={threads}
         activeThreadId={activeThreadId}
-        onSelectThread={setActiveThreadId}
+        onSelectThread={handleSelectThread}
         onNewChat={handleNewChat}
         onLogout={handleLogout}
         onDelete={handleDeleteAccount}
@@ -248,7 +259,26 @@ export default function App() {
         adminTab={adminTab}
         onAdminTabChange={setAdminTab}
       />
+      {isMobile && (
+        <div className={`sidebar-overlay ${showMobileSidebar ? 'show' : ''}`} onClick={() => setShowMobileSidebar(false)} />
+      )}
       <main className="main">
+        {isMobile && (
+          <div className="mobile-topbar">
+            <button className="icon-btn ghost" onClick={() => setShowMobileSidebar(true)} aria-label="Open menu">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
+              </svg>
+            </button>
+            <div className="mobile-topbar-meta">
+              <div className="mobile-brand">Confidential Hub</div>
+              {user && <div className="mobile-user">{user.name || user.email}</div>}
+            </div>
+            {showChat && user && (
+              <button className="primary-btn compact" onClick={handleNewChat}>New</button>
+            )}
+          </div>
+        )}
         {!user && (
           <AuthView onLogin={handleLogin} onError={setError} />
         )}

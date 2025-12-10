@@ -454,7 +454,7 @@ def setup_enhanced_chromadb(site_number=DEFAULT_SITE_NAME):
     env_site = resolve_site_name(site_number)
     site_config = get_site_config(env_site)
     if not site_config:
-        print(f"❌ Invalid site number: {site_number}")
+        print(f"Invalid site number: {site_number}")
         return
     
     SITE_NAME = site_config['name']
@@ -472,16 +472,16 @@ def setup_enhanced_chromadb(site_number=DEFAULT_SITE_NAME):
         'high': 0.1
     }
     
-    print(f"🚀 Enhanced Setup for {site_config['description']}")
+    print(f"Enhanced Setup for {site_config['description']}")
     print(f"   Now including: Age, Phone, Address in ALL chunks")
     print("=" * 60)
     
     if not os.path.exists(CSV_PATH):
-        print(f"❌ CSV file not found: {CSV_PATH}")
+        print(f"CSV file not found: {CSV_PATH}")
         return
     
     # Load embedding model
-    print("📦 Loading embedding model...")
+    print("Loading embedding model...")
     embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
         model_name="all-MiniLM-L6-v2"
     )
@@ -510,15 +510,15 @@ def setup_enhanced_chromadb(site_number=DEFAULT_SITE_NAME):
                 "enhanced_version": "2.0"
             }
         )
-        print(f"  ✅ Created: {col_name} (ε={epsilon})")
+        print(f"  Created: {col_name} (ε={epsilon})")
     
     # Load CSV
-    print(f"\n📂 Loading data...")
+    print(f"\nLoading data...")
     df = pd.read_csv(CSV_PATH)
     print(f"  Loaded {len(df)} records")
     
     # Process for each privacy level
-    print("\n📥 Processing with complete patient information...")
+    print("\nProcessing with complete patient information...")
     
     for level, col in collections.items():
         print(f"\n  Privacy level: {level}")
@@ -546,10 +546,10 @@ def setup_enhanced_chromadb(site_number=DEFAULT_SITE_NAME):
         if docs:
             col.add(documents=docs, metadatas=metas, ids=ids)
         
-        print(f"    ✅ Stored {col.count()} chunks")
+        print(f"    Stored {col.count()} chunks")
     
     # Test to verify complete info
-    print("\n🔍 Verifying complete patient information...")
+    print("\nVerifying complete patient information...")
     test_query = "patient diagnosis"
     
     for level in ['none', 'moderate', 'high']:
@@ -561,12 +561,12 @@ def setup_enhanced_chromadb(site_number=DEFAULT_SITE_NAME):
             has_age = "Age:" in doc
             has_phone = "Phone:" in doc
             has_address = "Address:" in doc
-            print(f"    Has Age: {'✅' if has_age else '❌'}")
-            print(f"    Has Phone: {'✅' if has_phone else '❌'}")
-            print(f"    Has Address: {'✅' if has_address else '❌'}")
+            print(f"    Has Age: {'Yes' if has_age else 'No'}")
+            print(f"    Has Phone: {'Yes' if has_phone else 'No'}")
+            print(f"    Has Address: {'Yes' if has_address else 'No'}")
             print(f"    Preview: {doc[:150]}...")
     
-    print("\n✅ Enhanced setup complete!")
+    print("\nEnhanced setup complete!")
     print(f"   All chunks now include: Age, Phone, Address")
     print(f"   Database: {DB_PATH}")
 

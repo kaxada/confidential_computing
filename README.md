@@ -2,7 +2,7 @@
 
 A privacy-preserving, distributed Retrieval-Augmented Generation (RAG) system designed for sensitive healthcare data. This system enables a central Hub to securely query multiple independent Site Nodes (e.g., hospitals, clinics) without exposing raw patient data, leveraging Differential Privacy (DP), Role-Based Access Control (RBAC), and PHI scrubbing.
 
-## 🌟 System Overview
+## System Overview
 
 ### Architecture: Hub-and-Spoke
 The system consists of two main components:
@@ -18,7 +18,7 @@ The system consists of two main components:
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## Quick Start (Local Development)
 
 The easiest way to run the entire system (Hub + 3 Sites) locally is using the dev script.
 
@@ -63,7 +63,7 @@ Open **http://localhost:5173** in your browser.
 
 ---
 
-## ☁️ Deployment (AWS)
+## Deployment (AWS)
 
 The project includes production-ready deployment scripts and GitHub Actions workflows for a multi-node AWS architecture.
 
@@ -99,7 +99,7 @@ Set the following secrets in your GitHub repository to enable automated deployme
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 ├── backend/                # Central Hub API (FastAPI)
@@ -122,7 +122,7 @@ Set the following secrets in your GitHub repository to enable automated deployme
 
 ---
 
-## 🛡️ Security & Privacy
+## Security & Privacy
 
 ### Privacy Levels
 Each query is processed under a specific privacy level, determining the amount of Differential Privacy (DP) noise injected into the vector retrieval process:
@@ -141,7 +141,7 @@ The system includes active guardrails to detect:
 
 ---
 
-## 🧩 Component Details
+## Component Details
 
 ### Backend (Hub)
 *   **Intelligent Router:** Uses GPT-4 to analyze the user's query and the detailed metadata of each site to decide where to route the request (e.g., *Site 2* for Oncology questions).

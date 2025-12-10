@@ -221,7 +221,7 @@ def setup_consistent_chromadb():
         'high': 0.1
     }
     
-    print("🚀 Setting up consistent ChromaDB with standardized PHI handling...")
+    print("Setting up consistent ChromaDB with standardized PHI handling...")
     
     # Load embedding model
     embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -253,12 +253,12 @@ def setup_consistent_chromadb():
         print(f"Created collection {col_name} (ε={epsilon})")
     
     # Load CSV
-    print(f"📂 Loading CSV: {CSV_PATH}")
+    print(f"Loading CSV: {CSV_PATH}")
     df = pd.read_csv(CSV_PATH)
     print(f"Loaded {len(df)} rows.")
     
     # Process and store for each privacy level
-    print("📥 Processing with consistent PHI handling...")
+    print("Processing with consistent PHI handling...")
     
     for level, col in collections.items():
         print(f"\nProcessing privacy level: {level}")
@@ -285,7 +285,7 @@ def setup_consistent_chromadb():
         print(f"Stored {col.count()} chunks in {col.name}")
     
     # Test consistency
-    print("\n🔍 Testing consistency across different queries...")
+    print("\nTesting consistency across different queries...")
     test_queries = [
         "sleep apnea and elevated creatinine",
         "patients with general consultation",
@@ -303,7 +303,7 @@ def setup_consistent_chromadb():
                 if header_match:
                     print(f"  {level:8} - {header_match.group(1)[:80]}...")
     
-    print("\n✅ Setup complete with consistent PHI handling!")
+    print("\nSetup complete with consistent PHI handling!")
 
 if __name__ == "__main__":
     setup_consistent_chromadb()

@@ -1,7 +1,6 @@
 # Confidential-Computing-RAG/populate_sites.py
 import requests
 
-# The URL of the script you just started in Step 2
 VECTOR_DB_URL = "http://localhost:8000/add_documents"
 
 SYNTHETIC_DATA = [
@@ -38,10 +37,10 @@ print("Sending data to Mock Vector DB...")
 try:
     response = requests.post(VECTOR_DB_URL, json=SYNTHETIC_DATA)
     if response.status_code == 200:
-        print("✅ Success! Data ingested.")
+        print("Success! Data ingested.")
         print(f"DB Response: {response.json()}")
     else:
-        print(f"❌ Failed: {response.text}")
+        print(f"Failed: {response.text}")
 except Exception as e:
-    print(f"❌ Connection Error: {e}")
+    print(f"Connection Error: {e}")
     print("Make sure 'python mock_vector_db.py' is running in another terminal!")

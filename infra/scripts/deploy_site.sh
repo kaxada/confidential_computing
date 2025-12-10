@@ -54,7 +54,36 @@ sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
 python3 -m venv "$VENV_DIR"
 source "$VENV_DIR/bin/activate"
 pip install --upgrade pip
+
+# Install CPU-only torch
+echo "[deploy_site] Installing CPU-only PyTorch..."
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
 pip install -r "$SITE_DIR/requirements.txt"
+
+# ----------------------------
+# Build ChromaDB if missing
+# ----------------------------
+BUILD_SCRIPT="$SITE_DIR/data/build_chromadb.py"
+DB_DIR="$SITE_DIR/data/database"
+
+# Check if DB directory exists and has content (sqlite3 file)
+if [ ! -f "$DB_DIR/chroma.sqlite3" ]; then
+    echo "[deploy_site] ChromaDB not found at $DB_DIR. Attempting to build..."
+    if [ -f "$BUILD_SCRIPT" ]; then
+        echo "[deploy_site] Running build script: $BUILD_SCRIPT"
+        # We need to run this from the site directory so relative paths in the script work
+        (
+            cd "$SITE_DIR"
+            # Ensure we use the venv python
+            "$VENV_DIR/bin/python" data/build_chromadb.py
+        )
+    else
+        echo "[deploy_site] WARNING: Build script not found at $BUILD_SCRIPT. Skipping DB build."
+    fi
+else
+    echo "[deploy_site] ChromaDB already exists. Skipping build."
+fi
 
 # Ensure site env has defaults if missing
 SITE_ENV="$SITE_DIR/.env"

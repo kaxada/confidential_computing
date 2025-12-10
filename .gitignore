@@ -11,3 +11,4 @@ build/
 .env
 images
 **/data/database/
+dev.db

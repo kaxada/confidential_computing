@@ -42,15 +42,15 @@ class Settings(BaseSettings):
     # Site Metadata for Semantic Routing
     site_metadata: list = [
         {
-            "text": "SPECIALTY: Laboratory & Pathology. Detailed blood work, urinalysis, biopsy reports, CMP, CBC, lipid profiles, and toxicology.",
+            "text": "Site 1. SPECIALTY: Primary Care & Chronic Disease Management. Covers general adult medical examinations and the management of chronic conditions such as Type 2 Diabetes Mellitus, Essential Hypertension, Hyperlipidemia, Chronic Kidney Disease, and COPD. INCLUDES: Routine lab results (Glucose, HbA1c, Cholesterol/Lipid panels, Creatinine, Sodium, CBC), and common prescriptions (Metformin, Insulin, Lisinopril, Statins). Best for longitudinal health history and chronic disease queries.",
             "metadata": {"site_id": "site_1", "url": "http://localhost:8080"}
         },
         {
-            "text": "SPECIALTY: Clinical Diagnosis & Treatment. Physician notes, discharge summaries, ICD-10 diagnosis codes, treatment plans, prescriptions.",
+            "text": "Site 2. SPECIALTY: Oncology & Specialized Cancer Treatment. Focuses on the diagnosis and treatment of malignancies including Lung Cancer, Esophageal Cancer, Lymphoma (Diffuse Large B-cell, Non-Hodgkin's), and Metastatic diseases. INCLUDES: Cancer staging (Stage I-IV), tumor markers (CA-125, CA 15-3, Thyroglobulin, LDH), chemotherapy and immunotherapy protocols (5-FU, Tamoxifen, Nivolumab), and clinical trial participation. Best for cancer-specific inquiries.",
             "metadata": {"site_id": "site_2", "url": "http://localhost:8081"}
         },
         {
-            "text": "SPECIALTY: Demographics & History. Patient admission records, insurance details, emergency contacts, social history, and admin data.",
+            "text": "Site 3. SPECIALTY: Emergency Department & Acute Trauma. Handles critical and urgent care cases including Cardiac Arrest, Stroke (Cerebral Infarction), Acute Liver/Kidney Failure, Hip Fractures, Seizures/Convulsions, and Trauma. INCLUDES: Triage levels, real-time vital signs (BP, HR, O2 Sat), acute interventions (Resuscitation, Intubation, CT Scans, Splinting), and critical labs (Lactate, D-dimer, Ammonia, Blood Cultures, Ethanol). Best for acute events and emergency visits.",
             "metadata": {"site_id": "site_3", "url": "http://localhost:8082"}
         }
     ]

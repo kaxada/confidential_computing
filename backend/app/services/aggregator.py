@@ -21,10 +21,10 @@ class ResultAggregator:
             return "Unable to retrieve insights from any research site. Please try again later."
 
         context = ""
-        for res in valid_responses:
+        for i, res in enumerate(valid_responses):
             site_id = res.get('site_id', 'Unknown')
             resp_text = res.get('response', '')
-            context += f"--- Report from {site_id} ---\n{resp_text}\n\n"
+            context += f"--- Report from Source {i+1} ({site_id}) ---\n{resp_text}\n\n"
 
         client = self._get_client()
         if not client:
@@ -36,7 +36,12 @@ class ResultAggregator:
         Synthesize the following reports from our distributed research labs:
         {context}
         
-        Provide a unified, coherent answer. Highlight consensus or contradictions between sites.
+        Instructions:
+        1. Provide a unified, coherent answer.
+        2. Highlight consensus or contradictions between sources.
+        3. DO NOT explicitly mention "Site 1", "Site 2", "Site 3", or "Source X" in your final response. 
+           Instead, refer to them as "the research data", "hospital records", "lab results", or "available reports".
+           Make the response sound natural and seamless.
         """
 
         try:

@@ -880,3 +880,22 @@ textarea.chat-input-field {
 .log-row:hover {
     background: var(--hover-bg);
 }
+
+/* Markdown Styling */
+.markdown-body p {
+    margin-bottom: 12px;
+}
+.markdown-body p:last-child {
+    margin-bottom: 0;
+}
+.markdown-body strong {
+    font-weight: 600;
+    color: var(--text);
+}
+.markdown-body ul, .markdown-body ol {
+    margin-left: 20px;
+    margin-bottom: 12px;
+}
+.markdown-body li {
+    margin-bottom: 4px;
+}

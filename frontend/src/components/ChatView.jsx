@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, memo } from 'react'
+import ReactMarkdown from 'react-markdown'
 
 function Icon({ path }) {
   return (
@@ -42,7 +43,9 @@ const MessageRow = memo(({ role, content, animate }) => {
         </div>
       )}
       <div className={isUser ? 'message-bubble' : 'assistant-text'}>
-        <div className="message-content">{displayContent}</div>
+        <div className="message-content markdown-body">
+            {isUser ? displayContent : <ReactMarkdown>{displayContent}</ReactMarkdown>}
+        </div>
       </div>
     </div>
   )

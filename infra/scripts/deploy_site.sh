@@ -44,7 +44,6 @@ sudo rsync -a --delete \
   --exclude "venv-$SITE_DIR_NAME" \
   --exclude "$SITE_DIR_NAME/venv" \
   --exclude "$SITE_DIR_NAME/.env" \
-  --exclude "$SITE_DIR_NAME/data" \
   --exclude "$SITE_DIR_NAME/__pycache__" \
   "$TEMP_DIR/$SITE_DIR_NAME" "$APP_DIR/"
 

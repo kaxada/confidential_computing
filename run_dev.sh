@@ -10,8 +10,11 @@ NC='\033[0m' # No Color
 
 # Cleanup function to kill background jobs and update requirements
 cleanup() {
+
+
     log_info "Stopping all services..."
     # Kill all background jobs started by this script
+    # We use jobs -p to get PIDs of background processes (which are now the direct services due to 'exec')
     jobs -p | xargs -r kill
     wait
     log_info "Services stopped. Exiting."
@@ -68,45 +71,6 @@ check_python_deps() {
   echo -e "${GREEN}Done.${NC}"
 }
 
-build_chromadb_if_missing() {
-  local dir="$1"
-  local build_script_abs="$dir/data/build_chromadb.py"
-  local build_script_rel="./data/build_chromadb.py"
-  local db_file="$dir/data/database/chroma.sqlite3"
-  local source_csv=""
-  local csv_candidates=(
-    "$dir/data/site1_medical_data_large.csv"
-    "$dir/data/site2_oncology_data_large.csv"
-    "$dir/data/site3_emergency_data_large.csv"
-  )
-  for candidate in "${csv_candidates[@]}"; do
-    if [ -f "$candidate" ]; then
-      source_csv="$candidate"
-      break
-    fi
-  done
-
-  # Only attempt builds when a script is present for the node
-  [ -f "$build_script_abs" ] || return
-
-  if [ -s "$db_file" ]; then
-    log_info "ChromaDB already present in $dir (skipping build)"
-    return
-  fi
-
-  if [ ! -f "$source_csv" ]; then
-    log_warn "Missing $source_csv; cannot auto-build ChromaDB for $dir"
-    return
-  fi
-
-  log_info "Building ChromaDB for $dir (first-run guard)..."
-  (
-    cd "$dir"
-    source venv/bin/activate
-    python "$build_script_rel"
-  ) || log_warn "ChromaDB build failed for $dir"
-}
-
 # Function to check and install Node.js dependencies
 check_node_deps() {
   local dir="$1"
@@ -161,7 +125,6 @@ echo "      Logs: logs/frontend.log"
 echo ""
 log_info "Preparing Site 1..."
 check_python_deps "site-node-one" "venv"
-build_chromadb_if_missing "site-node-one"
 log_info "Starting Site 1 on http://localhost:8080..."
 echo "      Logs: logs/site_1.log"
 (
@@ -175,7 +138,6 @@ echo "      Logs: logs/site_1.log"
 echo ""
 log_info "Preparing Site 2..."
 check_python_deps "site-node-two" "venv"
-build_chromadb_if_missing "site-node-two"
 log_info "Starting Site 2 on http://localhost:8081..."
 echo "      Logs: logs/site_2.log"
 (
@@ -189,7 +151,6 @@ echo "      Logs: logs/site_2.log"
 echo ""
 log_info "Preparing Site 3..."
 check_python_deps "site-node-three" "venv"
-build_chromadb_if_missing "site-node-three"
 log_info "Starting Site 3 on http://localhost:8082..."
 echo "      Logs: logs/site_3.log"
 (

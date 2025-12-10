@@ -62,27 +62,34 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install -r "$SITE_DIR/requirements.txt"
 
 # ----------------------------
-# Build ChromaDB if missing
+# Build ChromaDB (default: only if missing)
 # ----------------------------
 BUILD_SCRIPT="$SITE_DIR/data/build_chromadb.py"
 DB_DIR="$SITE_DIR/data/database"
+FORCE_REBUILD_DB="${FORCE_REBUILD_DB:-false}"
 
-# Check if DB directory exists and has content (sqlite3 file)
-if [ ! -f "$DB_DIR/chroma.sqlite3" ]; then
-    echo "[deploy_site] ChromaDB not found at $DB_DIR. Attempting to build..."
-    if [ -f "$BUILD_SCRIPT" ]; then
-        echo "[deploy_site] Running build script: $BUILD_SCRIPT"
-        # We need to run this from the site directory so relative paths in the script work
+if [ -f "$BUILD_SCRIPT" ]; then
+    if [ "$FORCE_REBUILD_DB" = "true" ]; then
+        echo "[deploy_site] FORCE_REBUILD_DB=true. Rebuilding ChromaDB at $DB_DIR..."
+        BUILD_DB="true"
+    else
+        if [ -f "$DB_DIR/chroma.sqlite3" ]; then
+            echo "[deploy_site] ChromaDB already exists and FORCE_REBUILD_DB=false. Skipping build."
+            BUILD_DB="false"
+        else
+            echo "[deploy_site] ChromaDB not found at $DB_DIR. Building..."
+            BUILD_DB="true"
+        fi
+    fi
+
+    if [ "$BUILD_DB" = "true" ]; then
         (
             cd "$SITE_DIR"
-            # Ensure we use the venv python
             "$VENV_DIR/bin/python" data/build_chromadb.py
         )
-    else
-        echo "[deploy_site] WARNING: Build script not found at $BUILD_SCRIPT. Skipping DB build."
     fi
 else
-    echo "[deploy_site] ChromaDB already exists. Skipping build."
+    echo "[deploy_site] WARNING: Build script not found at $BUILD_SCRIPT. Skipping DB build."
 fi
 
 # Ensure site env has defaults if missing

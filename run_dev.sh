@@ -10,32 +10,8 @@ NC='\033[0m' # No Color
 
 # Cleanup function to kill background jobs and update requirements
 cleanup() {
-    echo ""
-    log_info "Updating requirements.txt for all services..."
-    
-    # Define services and their paths
-    declare -A services
-    services["backend"]="backend"
-    services["site-node-one"]="site-node-one"
-    services["site-node-two"]="site-node-two"
-    services["site-node-three"]="site-node-three"
-
-    for service in "${!services[@]}"; do
-        dir="${services[$service]}"
-        if [ -d "$dir/venv" ]; then
-            echo -n "  -> Updating $dir/requirements.txt... "
-            (
-                cd "$dir"
-                source venv/bin/activate
-                pip freeze > requirements.txt
-            )
-            echo -e "${GREEN}Done.${NC}"
-        fi
-    done
-
     log_info "Stopping all services..."
     # Kill all background jobs started by this script
-    # We use jobs -p to get PIDs of background processes (which are now the direct services due to 'exec')
     jobs -p | xargs -r kill
     wait
     log_info "Services stopped. Exiting."

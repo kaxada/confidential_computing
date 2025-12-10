@@ -79,14 +79,14 @@ check_python_deps() {
   source "$venv_path/bin/activate"
   pip install -q --upgrade pip
   
+  # Force CPU-only torch installation
+  pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+
   # Install/update packages from requirements.txt
   if [ -f "$dir/requirements.txt" ]; then
     pip install -q -r "$dir/requirements.txt"
   fi
   
-  # Regenerate requirements.txt to capture new packages added manually
-  # pip freeze > "$dir/requirements.txt" 
-  # (Commented out freeze to avoid noise/unexpected changes during run)
   
   deactivate
   echo -e "${GREEN}Done.${NC}"

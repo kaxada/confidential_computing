@@ -65,7 +65,7 @@ pip install -r "$SITE_DIR/requirements.txt"
 # ----------------------------
 BUILD_SCRIPT="$SITE_DIR/data/build_chromadb.py"
 DB_DIR="$SITE_DIR/data/database"
-FORCE_REBUILD_DB="${FORCE_REBUILD_DB:-false}"
+FORCE_REBUILD_DB="${FORCE_REBUILD_DB:-true}"
 
 if [ -f "$BUILD_SCRIPT" ]; then
     if [ "$FORCE_REBUILD_DB" = "true" ]; then

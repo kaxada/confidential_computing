@@ -26,6 +26,7 @@ def startup_event():
     print("Application startup event triggered.")
     # Create tables if not exist and seed admin.
     db.Base.metadata.create_all(bind=db.engine)
+    db.ensure_schema()
     with db.SessionLocal() as session:
         init_admin(session)
 

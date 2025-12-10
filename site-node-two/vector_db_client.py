@@ -2,6 +2,9 @@
 # Client for interacting with the vector database API
 
 import logging
+import os
+import subprocess
+import sys
 from typing import Dict, List, Optional
 
 import requests
@@ -42,6 +45,7 @@ class VectorDBClient:
         self.embedding_fn = None
 
         if self.mode == "local":
+            self._maybe_bootstrap_chroma()
             self._init_local_chroma()
             logging.info(f"Initialized VectorDBClient in local mode with DB at {self.chroma_db_path}")
         else:
@@ -121,6 +125,23 @@ class VectorDBClient:
         return formatted
 
     # --- Internal helpers ---
+
+    def _maybe_bootstrap_chroma(self):
+        """Ensure the local Chroma DB exists; build if missing."""
+        sqlite_path = os.path.join(self.chroma_db_path, "chroma.sqlite3")
+        if os.path.exists(sqlite_path) and os.path.getsize(sqlite_path) > 0:
+            return
+
+        script_path = os.path.join(config.BASE_DIR, "data", "build_chromadb.py")
+        if not os.path.exists(script_path):
+            logging.warning(f"Chroma DB missing at {sqlite_path} and build script not found.")
+            return
+
+        logging.info(f"Chroma DB missing at {sqlite_path}; running build script.")
+        try:
+            subprocess.check_call([sys.executable, script_path], cwd=os.path.dirname(script_path))
+        except Exception as e:
+            logging.error(f"Failed to build Chroma DB via {script_path}: {e}")
 
     def _init_local_chroma(self):
         """Initialize local ChromaDB client and embedding function."""

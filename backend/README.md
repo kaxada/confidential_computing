@@ -11,5 +11,5 @@
 - `uvicorn app.main:app --reload --port 8000`
 
 ## Tests
-- `pip install -r requirements-dev.txt`
+- `pip install -r requirements.txt`
 - `pytest`

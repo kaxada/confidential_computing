@@ -38,9 +38,9 @@ VECTOR_DB_MODE = os.getenv("VECTOR_DB_MODE", "local").lower()  # "local" (defaul
 # Local ChromaDB configuration (default: use ./data persistent DB)
 CHROMA_DB_PATH = os.getenv(
     "CHROMA_DB_PATH",
-    os.path.abspath(os.path.join(BASE_DIR, "data/chromadb_site1_db"))
+    os.path.abspath(os.path.join(BASE_DIR, "data/database"))
 )
-CHROMA_SITE_NAME = os.getenv("CHROMA_SITE_NAME", "site1")
+CHROMA_SITE_NAME = os.getenv("CHROMA_SITE_NAME", "site2")
 CHROMA_COLLECTION_TEMPLATE = os.getenv("CHROMA_COLLECTION_TEMPLATE", "{site}_{privacy}_privacy")
 DEFAULT_EMBEDDING_MODEL = os.getenv("DEFAULT_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 

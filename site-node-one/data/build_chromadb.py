@@ -205,8 +205,14 @@ def chunk_record_with_consistent_phi(record, privacy_level='none'):
 def setup_consistent_chromadb():
     SITE_NAME = 'site1'
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    DB_PATH = os.path.join(base_dir, 'chromadb_site1_db')
-    CSV_PATH = os.getenv('CHROMA_SOURCE_CSV', './site1_medical_data_large.csv')
+    DB_PATH = os.getenv(
+        'CHROMA_DB_PATH',
+        os.path.join(base_dir, 'database')
+    )
+    CSV_PATH = os.getenv(
+        'CHROMA_SOURCE_CSV',
+        os.path.join(base_dir, 'site1_medical_data_large.csv')
+    )
     
     PRIVACY_LEVELS = {
         'none': float('inf'),

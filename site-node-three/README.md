@@ -40,7 +40,7 @@ OPENAI_API_KEY=your_api_key_here
 
 # Vector Database (local Chroma, no separate server needed)
 VECTOR_DB_MODE=local
-CHROMA_DB_PATH=./data/chromadb_site1_db
+CHROMA_DB_PATH=./data/database
 CHROMA_SITE_NAME=site1
 # Optional HTTP fallback:
 # VECTOR_DB_MODE=http
@@ -60,7 +60,7 @@ POLICY_TOKEN_PUBLIC_KEY_PATH=./keys/policy_public_key.pem
 ### 3. Point to the local Chroma database
 
 The chatbot reads the persisted Chroma DB directly (no extra FastAPI server).
-The default path is `./data/chromadb_site1_db` relative to this folder; override via `CHROMA_DB_PATH` if needed.
+The default path is `./data/database` relative to this folder; override via `CHROMA_DB_PATH` if needed.
 
 If you still want to call a remote vector DB service instead, set `VECTOR_DB_MODE=http` and `VECTOR_DB_API_URL`.
 
@@ -169,7 +169,7 @@ In production with `ENABLE_POLICY_VERIFICATION=true`:
 ├── policy_token.py          # Policy token handling and verification
 ├── data/
 │   ├── build_chromadb.py    # Script to build the Chroma DB
-│   └── chromadb_site1_db/   # Persisted Chroma database
+│   └── database/   # Persisted Chroma database
 ├── logs/                    # Chatbot, audit, and query logs
 ├── requirements.txt         # Python dependencies
 ├── LOCAL_testing.md         # Local testing guide

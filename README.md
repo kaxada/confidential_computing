@@ -6,7 +6,7 @@ Working toward a confidential-computing-backed RAG chatbot. See `docs/step1-mvp-
 - Env: copy `backend/.env.example` to `.env` and set `DATABASE_URL`, JWT settings, `SITE_BASE_URL`.
 - Run dev server: `source venv/bin/activate && cd backend && uvicorn app.main:app --reload --port 8000`
 - Site RAG service (from `site-node/`): `cd site-node && python site_service.py` (listens on 9000 by default)
-- Tests: `pip install -r backend/requirements-dev.txt && cd backend && pytest`
+- Tests: `pip install -r backend/requirements.txt && cd backend && pytest`
 
 ## Frontend (React + Vite)
 - Install deps: `cd frontend && npm install`

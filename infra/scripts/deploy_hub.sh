@@ -75,7 +75,7 @@ sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
 python3 -m venv "$VENV_DIR"
 source "$VENV_DIR/bin/activate"
 pip install --upgrade pip
-pip install -r "$BACKEND_DIR/app/requirements.txt"
+pip install -r "$BACKEND_DIR/requirements.txt"
 
 # ----------------------------
 # Generate backend .env as ec2-user

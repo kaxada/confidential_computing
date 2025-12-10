@@ -60,7 +60,7 @@ cat <<EOF > "$SITE_ENV"
 LLM_PROVIDER=openai
 OPENAI_API_KEY=${OPENAI_API_KEY_VAL}
 VECTOR_DB_MODE=local
-CHROMA_DB_PATH=./data/chromadb_site1_db
+CHROMA_DB_PATH=./data/database
 SITE_ID=site_local
 ENCLAVE_MODE=false
 ENABLE_POLICY_VERIFICATION=false

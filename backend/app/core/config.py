@@ -27,6 +27,33 @@ class Settings(BaseSettings):
     site_id: str = "site_local"
     default_privacy_level: str = "moderate"
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/confidential_rag"
+    
+    # Hub Configuration
+    openai_api_key: str = ""
+    aggregation_model: str = "gpt-4"
+    
+    # Site Registry (ID -> URL)
+    site_registry: dict = {
+        "site_1": {"url": "http://localhost:8080"},
+        "site_2": {"url": "http://localhost:8081"},
+        "site_3": {"url": "http://localhost:8082"}
+    }
+
+    # Site Metadata for Semantic Routing
+    site_metadata: list = [
+        {
+            "text": "SPECIALTY: Laboratory & Pathology. Detailed blood work, urinalysis, biopsy reports, CMP, CBC, lipid profiles, and toxicology.",
+            "metadata": {"site_id": "site_1", "url": "http://localhost:8080"}
+        },
+        {
+            "text": "SPECIALTY: Clinical Diagnosis & Treatment. Physician notes, discharge summaries, ICD-10 diagnosis codes, treatment plans, prescriptions.",
+            "metadata": {"site_id": "site_2", "url": "http://localhost:8081"}
+        },
+        {
+            "text": "SPECIALTY: Demographics & History. Patient admission records, insurance details, emergency contacts, social history, and admin data.",
+            "metadata": {"site_id": "site_3", "url": "http://localhost:8082"}
+        }
+    ]
 
     class Config:
         env_file = ".env"

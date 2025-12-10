@@ -4,8 +4,8 @@ set -euo pipefail
 TAR_PATH="${1:-/tmp/confidential_site_bundle.tgz}"
 APP_DIR="/opt/confidential"
 DEPLOY_USER="${DEPLOY_USER:-ec2-user}"
-SITE_DIR="$APP_DIR/site-node"
-VENV_DIR="$APP_DIR/venv-site"
+SITE_DIR="$APP_DIR/site-node-one"
+VENV_DIR="$APP_DIR/venv-site-one"
 
 echo "[deploy_site] Using bundle: $TAR_PATH"
 

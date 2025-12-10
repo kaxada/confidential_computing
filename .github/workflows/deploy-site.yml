@@ -17,7 +17,7 @@ jobs:
       - name: Create deployment bundle
         run: |
           tar czf confidential_site_bundle.tgz \
-            site-node infra
+            site-node-one infra
 
       - name: Free up disk space
         uses: appleboy/ssh-action@v1.0.3

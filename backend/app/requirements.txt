@@ -7,3 +7,6 @@ pydantic-settings
 sqlalchemy
 psycopg[binary]
 passlib[bcrypt]
+numpy
+openai
+httpx

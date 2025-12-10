@@ -56,6 +56,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             sudo mkdir -p /var/tmp/confidential_deploy
+            sudo chown $USER:$USER /var/tmp/confidential_deploy
             sudo rm -f /var/tmp/confidential_deploy/confidential_site_bundle.tgz
 
       - name: Copy bundle to ${{ matrix.site_name }}

@@ -105,4 +105,8 @@ sudo systemctl daemon-reload
 sudo systemctl restart "$SERVICE_NAME"
 sudo systemctl enable "$SERVICE_NAME"
 
+echo "[deploy_site] Cleaning up deployment artifacts..."
+rm -f "$TAR_PATH"
+rm -rf /tmp/infra
+
 echo "[deploy_site] Done deploying $SITE_DIR_NAME"

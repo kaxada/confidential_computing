@@ -156,4 +156,9 @@ sudo systemctl daemon-reload
 sudo systemctl restart backend.service
 sudo systemctl enable backend.service
 
+# Cleanup
+echo "[deploy_hub] Cleaning up deployment artifacts..."
+rm -f "$TAR_PATH"
+rm -rf /tmp/infra
+
 echo "[deploy_hub] Done"

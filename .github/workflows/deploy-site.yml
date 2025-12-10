@@ -11,18 +11,22 @@ on:
 
 jobs:
   deploy:
+    name: site ${{ matrix.site_num }} deploy
     runs-on: ubuntu-latest
     environment: confidential_computing
     strategy:
       matrix:
         include:
           - site_name: "site-node-one"
+            site_num: "1"
             host_secret: "SITE_1_HOST"
             port: "8000"
           - site_name: "site-node-two"
+            site_num: "2"
             host_secret: "SITE_2_HOST"
             port: "8000"
           - site_name: "site-node-three"
+            site_num: "3"
             host_secret: "SITE_3_HOST"
             port: "8000"
     steps:

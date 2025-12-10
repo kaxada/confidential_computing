@@ -12,3 +12,4 @@ build/
 images
 **/data/database/
 dev.db
+.pytest_cache/

@@ -25,7 +25,17 @@ The easiest way to run the entire system (Hub + 3 Sites) locally is using the de
 ### Prerequisites
 *   **Python 3.9+**
 *   **Node.js 18+ & npm**
-*   **PostgreSQL 15+** (Running locally on port 5432 with user/pass `postgres`/`postgres`)
+*   **PostgreSQL 15+** (Running locally on port 5432). You'll need to create a database named `confidential_rag` and a user `postgres` with password `postgres`. For example, using `psql`:
+    ```sql
+    CREATE DATABASE confidential_rag;
+    CREATE USER postgres WITH PASSWORD 'postgres';
+    ALTER ROLE postgres SET client_encoding TO 'utf8';
+    ALTER ROLE postgres SET default_transaction_isolation TO 'read committed';
+    ALTER ROLE postgres SET timezone TO 'UTC';
+    GRANT ALL PRIVILEGES ON DATABASE confidential_rag TO postgres;
+    ```
+    Note: Schema changes currently require manual SQL execution or scripts, as there is no automated migration system like Alembic.
+
 *   **OpenAI API Key** (Required for RAG generation)
 
 ### 1. Configure Environment

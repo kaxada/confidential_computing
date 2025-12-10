@@ -297,7 +297,12 @@ export default function App() {
             </div>
         )}
 
-        {error && <div className="error">{error}</div>}
+        {error && (
+            <div className="error" onClick={() => setError(null)} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {error}
+            </div>
+        )}
       </main>
     </div>
   )

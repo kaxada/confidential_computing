@@ -21,17 +21,20 @@ export default function AuthView({ onLogin, onError }) {
   const [mode, setMode] = useState('login')
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '', requested_role: 'researcher' })
   const [status, setStatus] = useState('')
+  const [localError, setLocalError] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   
   const roleOptions = useMemo(() => ROLE_OPTIONS.filter(r => r !== 'admin'), [])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+    if (localError) setLocalError(null)
   }
 
   const submit = async (e) => {
     e.preventDefault()
     setStatus('')
+    setLocalError(null)
     onError(null)
     try {
       if (mode === 'signup') {
@@ -53,7 +56,7 @@ export default function AuthView({ onLogin, onError }) {
         }, res.token, res.role)
       }
     } catch (err) {
-      onError(err.message)
+      setLocalError(err.message)
     }
   }
 
@@ -75,6 +78,12 @@ export default function AuthView({ onLogin, onError }) {
 
             {!isSignupSuccess ? (
                 <form onSubmit={submit} className="auth-form">
+                    {localError && (
+                        <div className="auth-error-banner">
+                            <Icon path="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                            <span>{localError}</span>
+                        </div>
+                    )}
                     {!isLogin && (
                         <>
                             <div className="input-group">
@@ -158,7 +167,7 @@ export default function AuthView({ onLogin, onError }) {
 
             <div className="auth-footer">
                 <span>{isLogin ? "Don't have an account?" : (isSignupSuccess ? "Return to" : "Already have an account?")}</span>
-                <button className="auth-link-btn" onClick={() => { setMode(isLogin ? 'signup' : 'login'); setStatus(''); onError(null); }}>
+                <button className="auth-link-btn" onClick={() => { setMode(isLogin ? 'signup' : 'login'); setStatus(''); setLocalError(null); onError(null); }}>
                     {isLogin ? 'Create one' : 'Sign in'}
                 </button>
             </div>

@@ -584,6 +584,19 @@ textarea.chat-input-field {
 
 .auth-status { margin-top: 16px; font-size: 14px; padding: 8px; border-radius: 6px; }
 .auth-status.success { background: #e6fffa; color: #047857; border: 1px solid #a7f3d0; }
+.auth-error-banner {
+  background: var(--error-bg);
+  color: var(--error-text);
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border: 1px solid var(--error-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
 .auth-status.success-block {
   display: flex;
   flex-direction: column;

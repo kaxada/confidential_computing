@@ -81,15 +81,26 @@ pip install -r "$BACKEND_DIR/requirements.txt"
 # Generate backend .env as ec2-user
 # ----------------------------
 BACKEND_ENV="$BACKEND_DIR/.env"
-if [ ! -f "$BACKEND_ENV" ]; then
+
+# Construct SITE_REGISTRY JSON if URLs are provided
+if [ -n "${SITE_1_URL:-}" ] && [ -n "${SITE_2_URL:-}" ] && [ -n "${SITE_3_URL:-}" ]; then
+    SITE_REGISTRY_JSON="{\"site_1\": {\"url\": \"${SITE_1_URL}\"}, \"site_2\": {\"url\": \"${SITE_2_URL}\"}, \"site_3\": {\"url\": \"${SITE_3_URL}\"}}"
+else
+    # Fallback to defaults
+    SITE_REGISTRY_JSON="{\"site_1\": {\"url\": \"http://localhost:8080\"}, \"site_2\": {\"url\": \"http://localhost:8081\"}, \"site_3\": {\"url\": \"http://localhost:8082\"}}"
+fi
+
+if [ ! -f "$BACKEND_ENV" ] || [ -n "${SITE_1_URL:-}" ]; then
+# Overwrite or create if we have new URLs, otherwise respect existing if no new URLs provided (logic simplified to always write for deployment consistency)
 sudo -u "$DEPLOY_USER" bash -c "cat > '$BACKEND_ENV' <<EOF
 DATABASE_URL=postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@localhost:5432/${DB_NAME}
-SITE_BASE_URL=http://localhost:8080
-SITE_ID=site_local
+SITE_BASE_URL=http://localhost:8000
+SITE_ID=hub
 DEFAULT_PRIVACY_LEVEL=moderate
 JWT_SECRET=${JWT_SECRET:-dev-secret-change-me}
 JWT_ALGORITHM=HS256
 JWT_EXP_MINUTES=60
+SITE_REGISTRY='${SITE_REGISTRY_JSON}'
 EOF"
 fi
 

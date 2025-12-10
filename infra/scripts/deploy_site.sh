@@ -2,12 +2,16 @@
 set -euo pipefail
 
 TAR_PATH="${1:-/tmp/confidential_site_bundle.tgz}"
+SITE_DIR_NAME="${2:-site-node-one}"
+SITE_PORT="${3:-8080}"
+
 APP_DIR="/opt/confidential"
 DEPLOY_USER="${DEPLOY_USER:-ec2-user}"
-SITE_DIR="$APP_DIR/site-node-one"
-VENV_DIR="$APP_DIR/venv-site-one"
+SITE_DIR="$APP_DIR/$SITE_DIR_NAME"
+VENV_DIR="$APP_DIR/venv-$SITE_DIR_NAME"
 
 echo "[deploy_site] Using bundle: $TAR_PATH"
+echo "[deploy_site] Target Site: $SITE_DIR_NAME on Port: $SITE_PORT"
 
 install_packages() {
   if command -v apt-get >/dev/null 2>&1; then
@@ -37,12 +41,12 @@ tar -xzf "$TAR_PATH" -C "$TEMP_DIR"
 
 echo "[deploy_site] Syncing to $APP_DIR"
 sudo rsync -a --delete \
-  --exclude 'venv-site' \
-  --exclude 'site-node/venv' \
-  --exclude 'site-node/.env' \
-  --exclude 'site-node/data' \
-  --exclude 'site-node/__pycache__' \
-  "$TEMP_DIR/" "$APP_DIR/"
+  --exclude "venv-$SITE_DIR_NAME" \
+  --exclude "$SITE_DIR_NAME/venv" \
+  --exclude "$SITE_DIR_NAME/.env" \
+  --exclude "$SITE_DIR_NAME/data" \
+  --exclude "$SITE_DIR_NAME/__pycache__" \
+  "$TEMP_DIR/$SITE_DIR_NAME" "$APP_DIR/"
 
 rm -rf "$TEMP_DIR"
 sudo chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$APP_DIR"
@@ -61,7 +65,7 @@ LLM_PROVIDER=openai
 OPENAI_API_KEY=${OPENAI_API_KEY_VAL}
 VECTOR_DB_MODE=local
 CHROMA_DB_PATH=./data/database
-SITE_ID=site_local
+SITE_ID=${SITE_DIR_NAME}
 ENCLAVE_MODE=false
 ENABLE_POLICY_VERIFICATION=false
 EOF
@@ -76,9 +80,29 @@ else
     fi
 fi
 
-sudo cp "$APP_DIR/infra/systemd/site.service" /etc/systemd/system/site.service
-sudo systemctl daemon-reload
-sudo systemctl restart site.service
-sudo systemctl enable site.service
+# Dynamically create systemd service
+SERVICE_NAME="${SITE_DIR_NAME}.service"
+echo "[deploy_site] Configuring systemd service: $SERVICE_NAME"
 
-echo "[deploy_site] Done"
+sudo bash -c "cat > /etc/systemd/system/${SERVICE_NAME} <<EOF
+[Unit]
+Description=Confidential Site Node ($SITE_DIR_NAME)
+After=network.target
+
+[Service]
+Type=simple
+User=$DEPLOY_USER
+WorkingDirectory=$SITE_DIR
+EnvironmentFile=-$SITE_ENV
+ExecStart=/bin/bash -lc 'source $VENV_DIR/bin/activate && uvicorn server:app --host 0.0.0.0 --port $SITE_PORT'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF"
+
+sudo systemctl daemon-reload
+sudo systemctl restart "$SERVICE_NAME"
+sudo systemctl enable "$SERVICE_NAME"
+
+echo "[deploy_site] Done deploying $SITE_DIR_NAME"

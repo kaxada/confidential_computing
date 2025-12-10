@@ -17,8 +17,6 @@ jobs:
 
       - name: Create deployment bundle
         run: |
-          # Create bundle in current workspace so scp-action can see it
-          # We bundle the full frontend source because the build now happens on the server (deploy_hub.sh)
           tar czf confidential_bundle.tgz \
             backend frontend infra
 
@@ -35,12 +33,15 @@ jobs:
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SITE_1_URL: "http://${{ secrets.SITE_1_HOST }}:8000"
+          SITE_2_URL: "http://${{ secrets.SITE_2_HOST }}:8000"
+          SITE_3_URL: "http://${{ secrets.SITE_3_HOST }}:8000"
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HUB_HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: POSTGRES_PASSWORD,JWT_SECRET
+          envs: POSTGRES_PASSWORD,JWT_SECRET,SITE_1_URL,SITE_2_URL,SITE_3_URL
           script: |
             tar -xzf /tmp/confidential_bundle.tgz -C /tmp infra/scripts/deploy_hub.sh
             bash /tmp/infra/scripts/deploy_hub.sh /tmp/confidential_bundle.tgz

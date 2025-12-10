@@ -1,9 +1,11 @@
-name: Deploy Site Node
+name: Deploy Site Nodes
 
 on:
   push:
     paths:
-      - "site-node/**"
+      - "site-node-one/**"
+      - "site-node-two/**"
+      - "site-node-three/**"
       - "infra/**"
       - ".github/workflows/deploy-site.yml"
 
@@ -11,18 +13,31 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: confidential_computing
+    strategy:
+      matrix:
+        include:
+          - site_name: "site-node-one"
+            host_secret: "SITE_1_HOST"
+            port: "8000"
+          - site_name: "site-node-two"
+            host_secret: "SITE_2_HOST"
+            port: "8000"
+          - site_name: "site-node-three"
+            host_secret: "SITE_3_HOST"
+            port: "8000"
     steps:
       - uses: actions/checkout@v4
 
       - name: Create deployment bundle
         run: |
+          # Bundle all site directories + infra
           tar czf confidential_site_bundle.tgz \
-            site-node-one infra
+            site-node-one site-node-two site-node-three infra
 
-      - name: Free up disk space
+      - name: Free up disk space on ${{ matrix.site_name }}
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SITE_HOST }}
+          host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
@@ -33,36 +48,40 @@ jobs:
             sudo rm -rf /var/tmp/confidential_deploy/* || true
             df -h
 
-      - name: Prep remote temp dir (avoid $HOME disk issues)
+      - name: Prep remote temp dir
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SITE_HOST }}
+          host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
             sudo mkdir -p /var/tmp/confidential_deploy
             sudo rm -f /var/tmp/confidential_deploy/confidential_site_bundle.tgz
-            df -h /var/tmp || true
 
-      - name: Copy bundle to site
+      - name: Copy bundle to ${{ matrix.site_name }}
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SITE_HOST }}
+          host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "confidential_site_bundle.tgz"
           target: "/var/tmp/confidential_deploy"
-          debug: true
 
-      - name: Deploy on site
+      - name: Deploy ${{ matrix.site_name }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SITE_HOST }}
+          host: ${{ secrets[matrix.host_secret] }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           envs: OPENAI_API_KEY
           script: |
+            # Extract only the infrastructure scripts first
             tar -xzf /var/tmp/confidential_deploy/confidential_site_bundle.tgz -C /tmp infra/scripts/deploy_site.sh
-            bash /tmp/infra/scripts/deploy_site.sh /var/tmp/confidential_deploy/confidential_site_bundle.tgz
+            
+            # Execute deployment script with Site Name and Port
+            bash /tmp/infra/scripts/deploy_site.sh \
+                 /var/tmp/confidential_deploy/confidential_site_bundle.tgz \
+                 "${{ matrix.site_name }}" \
+                 "${{ matrix.port }}"

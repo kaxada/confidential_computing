@@ -54,4 +54,31 @@ class ResultAggregator:
             logging.error(f"Aggregation error: {e}")
             return f"Error synthesizing results. Raw data:\n\n{context}"
 
+    def generate_title(self, user_query: str, assistant_response: str) -> str:
+        """
+        Generates a short title (3-5 words) based on the conversation start.
+        """
+        client = self._get_client()
+        if not client:
+            return "New Chat"
+            
+        prompt = f"""
+        Generate a very short, concise title (max 5 words) for a conversation that starts with:
+        User: "{user_query}"
+        Assistant: "{assistant_response[:500]}..."
+        
+        Do not use quotes. Just the title.
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=settings.aggregation_model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            title = response.choices[0].message.content.strip().replace('"', '')
+            return title
+        except Exception as e:
+            logging.error(f"Title generation error: {e}")
+            return "New Chat"
+
 aggregator = ResultAggregator()

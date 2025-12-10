@@ -115,12 +115,10 @@ async def chat_query(payload: ChatRequest, user: User = Depends(require_approved
     # Auto-generate title if new thread
     if is_new_thread:
         try:
-            # Simple title generation using aggregation model directly? 
-            # Or use aggregator.synthesize_results on a prompt?
-            # Let's keep it simple or skip for now to save tokens, or use existing method if cheap.
-            # We can use the aggregator client directly if exposed, or just skip it.
-            pass
-        except Exception:
-            pass
+            new_title = aggregator.generate_title(payload.question, assistant_msg)
+            update_thread(session, thread.id, user.id, new_title)
+            result["title"] = new_title
+        except Exception as e:
+            log_event(session, user.id, "title_generation_error", {"error": str(e)})
 
     return result

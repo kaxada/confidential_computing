@@ -270,35 +270,37 @@ export default function App() {
 
   return (
     <div className={`app ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobile ? 'mobile' : ''} ${showMobileSidebar ? 'sidebar-open' : ''}`}>
-      <Sidebar
-        collapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        isMobile={isMobile}
-        mobileOpen={showMobileSidebar}
-        onCloseMobile={() => setShowMobileSidebar(false)}
-        user={user}
-        profile={profile}
-        showThreads={showChat}
-        threads={threads}
-        activeThreadId={activeThreadId}
-        onSelectThread={handleSelectThread}
-        onNewChat={handleNewChat}
-        onLogout={handleLogout}
-        onDelete={handleDeleteAccount}
-        onRenameThread={handleRenameThread}
-        onDeleteThread={handleDeleteThread}
-        onRequestAccess={() => setShowAccessModal(true)}
-        onRefreshProfile={fetchProfile}
-        viewMode={viewMode}
-        onToggleViewMode={() => setViewMode(viewMode === 'admin' ? 'chat' : 'admin')}
-        adminTab={adminTab}
-        onAdminTabChange={setAdminTab}
-      />
-      {isMobile && (
+      {user && (
+        <Sidebar
+          collapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          isMobile={isMobile}
+          mobileOpen={showMobileSidebar}
+          onCloseMobile={() => setShowMobileSidebar(false)}
+          user={user}
+          profile={profile}
+          showThreads={showChat}
+          threads={threads}
+          activeThreadId={activeThreadId}
+          onSelectThread={handleSelectThread}
+          onNewChat={handleNewChat}
+          onLogout={handleLogout}
+          onDelete={handleDeleteAccount}
+          onRenameThread={handleRenameThread}
+          onDeleteThread={handleDeleteThread}
+          onRequestAccess={() => setShowAccessModal(true)}
+          onRefreshProfile={fetchProfile}
+          viewMode={viewMode}
+          onToggleViewMode={() => setViewMode(viewMode === 'admin' ? 'chat' : 'admin')}
+          adminTab={adminTab}
+          onAdminTabChange={setAdminTab}
+        />
+      )}
+      {user && isMobile && (
         <div className={`sidebar-overlay ${showMobileSidebar ? 'show' : ''}`} onClick={() => setShowMobileSidebar(false)} />
       )}
       <main className="main">
-        {isMobile && (
+        {isMobile && user && (
           <div className="mobile-topbar">
             <button className="icon-btn ghost" onClick={() => setShowMobileSidebar(true)} aria-label="Open menu">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -307,9 +309,9 @@ export default function App() {
             </button>
             <div className="mobile-topbar-meta">
               <div className="mobile-brand">Confidential Hub</div>
-              {user && <div className="mobile-user">{user.name || user.email}</div>}
+              <div className="mobile-user">{user.name || user.email}</div>
             </div>
-            {showChat && user && (
+            {showChat && (
               <button className="icon-btn ghost" onClick={handleNewChat} aria-label="New chat">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" strokeLinecap="round" strokeLinejoin="round" />

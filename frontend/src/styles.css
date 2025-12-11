@@ -401,6 +401,7 @@ body {
 
 .message-row {
   display: flex;
+  align-items: flex-start;
   padding: 24px 0;
   gap: 16px;
   color: var(--text);
@@ -417,7 +418,7 @@ body {
   border-radius: 50%;
   background: var(--accent); 
   flex-shrink: 0;
-  margin-top: 4px;
+  margin-top: 0px;
 }
 .message-avatar.user-av { background: #555; }
 
@@ -994,6 +995,9 @@ textarea.chat-input-field {
 }
 
 /* Markdown Styling */
+.markdown-body > *:first-child {
+    margin-top: 0;
+}
 .markdown-body p {
     margin-bottom: 12px;
 }

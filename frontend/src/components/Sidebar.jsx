@@ -265,7 +265,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, user, profile, sh
                </div>
                <div className="menu-divider"></div>
                {isAdmin && (
-                   <button className="menu-item" onClick={onToggleViewMode}>
+                   <button className="menu-item" onClick={() => handleNavAction(onToggleViewMode)}>
                        Switch to {viewMode === 'admin' ? 'Chat' : 'Admin'}
                    </button>
                )}

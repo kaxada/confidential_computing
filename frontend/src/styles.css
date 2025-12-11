@@ -589,7 +589,9 @@ textarea.chat-input-field {
   .thread-link { padding: 10px; font-size: 13px; }
   .chat-scroll-area { padding: 64px 12px 110px; }
   .message-content { font-size: 14px; }
-  .assistant-text, .message-bubble { padding: 12px; border-radius: 14px; }
+  .message-bubble { padding: 12px; border-radius: 14px; }
+  .message-row { gap: 12px; }
+  .message-row.assistant .message-avatar { margin-top: 2px; }
   .input-container { padding: 10px 10px 10px 12px; }
   .auth-card-modern { padding: 22px 18px; }
   .admin-container { padding: 24px 18px; }

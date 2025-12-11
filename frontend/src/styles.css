@@ -660,60 +660,61 @@ textarea.chat-input-field {
 }
 
 @media (max-width: 960px) {
-  .app { grid-template-columns: 1fr; }
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+  }
+
+  .app {
+    grid-template-columns: 1fr;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
   .app.collapsed { grid-template-columns: 1fr; }
 
   .main {
     width: 100%;
+    max-width: 100vw;
     padding-top: 64px;
-    overflow: hidden;
-  }
-
-  .content-grid {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .chat-container {
-    position: relative;
-    height: 100%;
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-orient: vertical;
-    -webkit-box-direction: normal;
-    -ms-flex-direction: column;
-    flex-direction: column;
-  }
-
-  .chat-scroll-area {
-    -webkit-box-flex: 1;
-    -ms-flex: 1;
-    flex: 1;
+    padding-bottom: 80px;
+    overflow-x: hidden;
     overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
   }
 
-  .chat-scroll-area::-webkit-scrollbar {
-    display: none;
+  .content-grid {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .chat-container {
+    position: static;
+    height: auto;
+    min-height: 100%;
+    display: block;
+    max-width: 100%;
+  }
+
+  .chat-scroll-area {
+    overflow: visible;
+    padding: 20px 14px 30px;
+    min-height: calc(100vh - 200px);
   }
 
   .input-area-wrapper {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
+    z-index: 50;
     background: -webkit-linear-gradient(transparent, var(--bg) 40%);
     background: -moz-linear-gradient(transparent, var(--bg) 40%);
     background: -o-linear-gradient(transparent, var(--bg) 40%);
     background: linear-gradient(transparent, var(--bg) 40%);
     padding: 16px 14px 20px;
-  }
-
-  .chat-scroll-area {
-    padding: 20px 14px 110px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
 
   .mobile-topbar {
@@ -802,7 +803,7 @@ textarea.chat-input-field {
   .sidebar { width: 240px; }
   .nav-link { padding: 10px; font-size: 13px; }
   .thread-link { padding: 10px; font-size: 13px; }
-  .chat-scroll-area { padding: 16px 12px 100px; }
+  .chat-scroll-area { padding: 16px 12px 30px; }
   .message-content { font-size: 14px; }
   .message-bubble { padding: 12px; border-radius: 14px; }
   .message-row { gap: 12px; }

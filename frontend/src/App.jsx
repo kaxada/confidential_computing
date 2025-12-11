@@ -10,7 +10,15 @@ import { useMediaQuery } from './hooks/useMediaQuery'
 export default function App() {
   const [user, setUser] = useState(null) // { email, role, token }
   const [threads, setThreads] = useState([])
-  const [activeThreadId, setActiveThreadId] = useState(null)
+  const [activeThreadId, setActiveThreadId] = useState(() => {
+    const stored = localStorage.getItem('cc_ui_state')
+    if (stored) {
+      try {
+        return JSON.parse(stored).activeThreadId || null
+      } catch (e) {}
+    }
+    return null
+  })
   const [messages, setMessages] = useState([])
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [isThinking, setIsThinking] = useState(false)
@@ -22,8 +30,24 @@ export default function App() {
   const [showAccessModal, setShowAccessModal] = useState(false)
   const [requestPrivacyLevel, setRequestPrivacyLevel] = useState('high')
   const [requestReason, setRequestReason] = useState('')
-  const [viewMode, setViewMode] = useState('admin') // 'admin' or 'chat' for admins
-  const [adminTab, setAdminTab] = useState('pending') // 'pending', 'users', 'logs'
+  const [viewMode, setViewMode] = useState(() => {
+    const stored = localStorage.getItem('cc_ui_state')
+    if (stored) {
+      try {
+        return JSON.parse(stored).viewMode || 'admin'
+      } catch (e) {}
+    }
+    return 'admin'
+  })
+  const [adminTab, setAdminTab] = useState(() => {
+    const stored = localStorage.getItem('cc_ui_state')
+    if (stored) {
+      try {
+        return JSON.parse(stored).adminTab || 'pending'
+      } catch (e) {}
+    }
+    return 'pending'
+  })
   const isMobile = useMediaQuery('(max-width: 960px)')
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
@@ -48,12 +72,20 @@ export default function App() {
           setUser(savedUser)
         } else {
           localStorage.removeItem('cc_session')
+          localStorage.removeItem('cc_ui_state')
         }
       } catch (e) {
         localStorage.removeItem('cc_session')
+        localStorage.removeItem('cc_ui_state')
       }
     }
   }, [])
+
+  // Persist UI state (viewMode, adminTab, activeThreadId) across reloads
+  useEffect(() => {
+    const uiState = { viewMode, adminTab, activeThreadId }
+    localStorage.setItem('cc_ui_state', JSON.stringify(uiState))
+  }, [viewMode, adminTab, activeThreadId])
 
   const loadThreads = async (token) => {
     if (!token || (isAdmin && viewMode !== 'chat')) return
@@ -183,11 +215,14 @@ export default function App() {
   const handleLogout = async () => {
     try { await api.logout(user?.token) } catch(e) {}
     localStorage.removeItem('cc_session')
+    localStorage.removeItem('cc_ui_state')
     setUser(null)
     setThreads([])
     setMessages([])
     setActiveThreadId(null)
     setProfile(null)
+    setViewMode('admin')
+    setAdminTab('pending')
   }
 
   const handleDeleteAccount = async () => {

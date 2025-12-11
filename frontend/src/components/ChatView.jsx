@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from 'react'
+import { useState, useEffect, useRef, memo, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 
 function Icon({ path }) {
@@ -12,6 +12,11 @@ function Icon({ path }) {
 const MessageRow = memo(({ role, content, animate, onContentUpdate }) => {
   const isUser = role === 'user'
   const [displayContent, setDisplayContent] = useState(animate && !isUser ? '' : content)
+  
+  const onUpdateRef = useRef(onContentUpdate)
+  useEffect(() => {
+      onUpdateRef.current = onContentUpdate
+  })
 
   useEffect(() => {
     if (!animate || isUser) {
@@ -24,14 +29,14 @@ const MessageRow = memo(({ role, content, animate, onContentUpdate }) => {
     const interval = setInterval(() => {
       i++
       setDisplayContent(content.substring(0, i))
-      if (onContentUpdate) onContentUpdate()
+      if (onUpdateRef.current) onUpdateRef.current()
       if (i >= content.length) {
         clearInterval(interval)
       }
     }, 15) // Typing speed
 
     return () => clearInterval(interval)
-  }, [content, animate, isUser, onContentUpdate])
+  }, [content, animate, isUser]) // Removed onContentUpdate dependency
 
   return (
     <div className={`message-row ${isUser ? 'user' : 'assistant'}`}>
@@ -64,11 +69,11 @@ export default function ChatView({ messages, loading, thinking, latestResponseId
     }
   }, [text])
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }
+  }, [])
 
   useEffect(() => {
     scrollToBottom()

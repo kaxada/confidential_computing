@@ -139,10 +139,10 @@ export default function App() {
       }
       
       const data = await api.messages(threadId, user.token)
-      setMessages(data)
       if (data.length > 0) {
         setLatestResponseId(data[data.length - 1].id)
       }
+      setMessages(data)
     } catch (err) {
       setError(err.message)
     } finally {

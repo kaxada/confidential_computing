@@ -54,7 +54,8 @@ body {
 .app {
   display: grid;
   grid-template-columns: 260px 1fr;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   transition: grid-template-columns 0.3s ease;
 }
 
@@ -70,6 +71,7 @@ body {
   padding: 12px;
   gap: 12px;
   overflow: hidden;
+  height: 100%;
   border-right: 1px solid transparent; /* Optional border */
 }
 
@@ -326,7 +328,7 @@ body {
 .main {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
   background: var(--bg);
   position: relative;
   overflow: hidden;
@@ -379,6 +381,11 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 80px 20px 120px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chat-scroll-area::-webkit-scrollbar {
+  display: none;
 }
 
 .empty-state {

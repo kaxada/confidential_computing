@@ -429,7 +429,7 @@ export default function AdminPanel({ user, onError, activeTab }) {
 
                   <div style={{marginBottom: 16}}>
                       <div style={{fontWeight: 600, marginBottom: 4, fontSize: 14}}>Event Details</div>
-                      <pre style={{background: 'var(--input-bg)', padding: 10, borderRadius: 6, overflowX: 'auto', fontSize: 12, margin: 0}}>
+                      <pre style={{background: 'var(--input-bg)', padding: 10, borderRadius: 6, overflowX: 'auto', fontSize: 12, margin: 0, whiteSpace: 'pre-wrap'}}>
                           {(() => {
                               if (!selectedLog.details) return 'None'
                               try { return JSON.stringify(JSON.parse(selectedLog.details), null, 2) }

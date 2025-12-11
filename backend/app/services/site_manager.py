@@ -40,17 +40,14 @@ class SiteManager:
         return processed_results
 
     async def _query_site(self, site_id: str, url: str, query: str, policy_token: dict):
+        payload = {
+            "query": query,
+            "user_id": str(policy_token.get("user_id")),
+            "role": policy_token.get("role"),
+            "privacy_level": policy_token.get("privacy_level"),
+            "site_id": settings.site_id, 
+        }
         try:
-            payload = {
-                "query": query,
-                "user_id": str(policy_token.get("user_id")),
-                "role": policy_token.get("role"),
-                "privacy_level": policy_token.get("privacy_level"),
-                "site_id": settings.site_id, # Hub identifies itself? Or pass site_id target?
-                # Actually server.py QueryRequest expects site_id to be site config.SITE_ID? 
-                # No, request.site_id is usually origin.
-            }
-            
             logging.info(f"Sending query to {site_id} ({url})...")
             response = await self.client.post(f"{url}/query", json=payload)
             response.raise_for_status()
@@ -59,6 +56,8 @@ class SiteManager:
             return {
                 "site_id": site_id,
                 "status": "success",
+                "request_url": f"{url}/query",
+                "request_payload": payload,
                 "response": data.get("response"),
                 "metadata": data.get("metadata")
             }
@@ -67,6 +66,8 @@ class SiteManager:
             return {
                 "site_id": site_id,
                 "status": "error",
+                "request_url": f"{url}/query",
+                "request_payload": payload,
                 "error": str(e)
             }
 

@@ -28,7 +28,7 @@ def signup(payload: SignupRequest, session: Session = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
     if get_user_by_email(session, payload.email):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-    create_user(
+    new_user = create_user(
         session,
         email=payload.email,
         password=payload.password,
@@ -36,6 +36,7 @@ def signup(payload: SignupRequest, session: Session = Depends(get_session)):
         first_name=payload.first_name,
         last_name=payload.last_name,
     )
+    log_event(session, new_user.id, "signup", {"requested_role": requested_role})
     return {"status": "pending"}
 
 

@@ -28,6 +28,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 @router.get("/threads", response_model=list[ThreadResponse])
 def get_threads(user: User = Depends(require_approved), session: Session = Depends(get_session)):
     threads = list_threads(session, user.id)
+    log_event(session, user.id, "list_threads", {"count": len(threads)})
     return [ThreadResponse(id=t.id, title=t.title) for t in threads]
 
 
@@ -41,6 +42,7 @@ def update_thread_title(
     thread = update_thread(session, thread_id, user.id, payload.title)
     if not thread:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found")
+    log_event(session, user.id, "update_thread", {"thread_id": thread_id, "new_title": payload.title})
     return ThreadResponse(id=thread.id, title=thread.title)
 
 
@@ -51,6 +53,7 @@ def delete_thread_endpoint(
     success = delete_thread(session, thread_id, user.id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found")
+    log_event(session, user.id, "delete_thread", {"thread_id": thread_id})
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -105,9 +108,21 @@ async def chat_query(payload: ChatRequest, user: User = Depends(require_approved
         }
     
     log_event(session, user.id, "chat_query", {
-        "privacy": privacy_level, 
-        "routed_to": target_sites if 'target_sites' in locals() else [],
-        "status": result.get("status")
+        "request": {
+            "question": payload.question,
+            "thread_id": thread.id,
+            "privacy_level": privacy_level
+        },
+        "routing": {
+            "target_sites": target_sites if 'target_sites' in locals() else [],
+            "method": "semantic_router" # or "llm" if tracked
+        },
+        "site_interactions": site_results if 'site_results' in locals() else [],
+        "response": {
+            "status": result.get("status"),
+            "content": assistant_msg if 'assistant_msg' in locals() else None,
+            "routed_to": result.get("routed_to")
+        }
     })
 
     add_message(session, thread, user_id=user.id, role="assistant", content=assistant_msg)

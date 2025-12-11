@@ -147,7 +147,7 @@ class RAGResponder:
         logging.info(f"Retrieved and filtered {len(formatted_docs)} documents")
         return formatted_docs
 
-    def generate(self, prompt: str, policy_token: PolicyToken = None) -> str:
+    def generate(self, prompt: str, policy_token: PolicyToken = None) -> tuple[str, list[dict]]:
         """
         Generates a response using the privacy-preserving RAG pipeline.
         
@@ -156,10 +156,10 @@ class RAGResponder:
             policy_token: Policy token with user role and privacy settings
             
         Returns:
-            A helpful, source-based, privacy-preserving response
+            Tuple of (response_text, retrieved_documents)
         """
         if not self.client:
-            return "I'm currently unavailable due to a configuration issue. Please try again later."
+            return "I'm currently unavailable due to a configuration issue. Please try again later.", []
         
         # Use default token if none provided
         if policy_token is None:
@@ -171,7 +171,8 @@ class RAGResponder:
         if not retrieved_docs:
             return (
                 "I couldn't find specific information on that topic in my trusted sources, "
-                "but I'm here to help if you'd like to rephrase your question or ask about something else."
+                "but I'm here to help if you'd like to rephrase your question or ask about something else.",
+                []
             )
         
         # Build context from retrieved documents
@@ -196,15 +197,15 @@ class RAGResponder:
                 is_clean, violations = self.phi_scrubber.validate_output(response_text)
                 if not is_clean:
                     logging.error(f"PHI detected in LLM output: {violations}")
-                    return "I apologize, but I cannot provide that response due to privacy constraints. Let me try to help you in a different way."
+                    return "I apologize, but I cannot provide that response due to privacy constraints. Let me try to help you in a different way.", retrieved_docs
             else:
                 logging.info("Privacy level 'none': Skipping output PHI scrubbing")
             
-            return response_text
+            return response_text, retrieved_docs
             
         except Exception as e:
             logging.error(f"Error generating response: {e}")
-            return f"I'm sorry, I encountered an error while generating a response. Please try rephrasing your question."
+            return f"I'm sorry, I encountered an error while generating a response. Please try rephrasing your question.", retrieved_docs
     
     def _generate_openai(self, prompt: str) -> str:
         """Generate response using OpenAI."""

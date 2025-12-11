@@ -73,7 +73,7 @@ class Chatbot:
         logging.info(f"Policy token set: role={token.role}, privacy_level={token.privacy_level}, site={token.site_id}")
         return True, "Policy token accepted"
 
-    def get_response(self, user_input: str, policy_token: PolicyToken = None) -> str:
+    def get_response(self, user_input: str, policy_token: PolicyToken = None) -> tuple[str, list]:
         """
         Processes user input with privacy and safety controls.
         
@@ -82,7 +82,7 @@ class Chatbot:
             policy_token: Optional policy token (if not set via set_policy_token)
             
         Returns:
-            A string containing the bot's response
+            Tuple of (response_text, retrieved_docs)
         """
         # Use provided token, or fall back to current session token, or create default
         token = policy_token or self.current_policy_token or create_default_token()
@@ -91,18 +91,19 @@ class Chatbot:
         if policy_token and policy_token != self.current_policy_token:
             success, msg = self.set_policy_token(policy_token)
             if not success:
-                return f"Access denied: {msg}"
+                return f"Access denied: {msg}", []
         
         # 1. Check the prompt with the safety guard
         is_safe, safety_response = self.safety_guard.check_prompt(user_input, self.history)
         
+        retrieved_docs = []
         if not is_safe:
             # If the prompt is unsafe, return the canned safety response
             response = safety_response
             log_flagged_prompt(user_input, response, token)
         else:
             # 2. If the prompt is safe, generate a response using the RAG pipeline
-            response = self.responder.generate(user_input, token)
+            response, retrieved_docs = self.responder.generate(user_input, token)
         
         # 3. Update the history
         self.history.append({
@@ -118,7 +119,7 @@ class Chatbot:
         if len(self.history) > 10:
             self.history.pop(0)
         
-        return response
+        return response, retrieved_docs
 
     def get_response_dict(self, user_input: str, policy_token: PolicyToken = None) -> dict:
         """
@@ -133,7 +134,7 @@ class Chatbot:
         """
         token = policy_token or self.current_policy_token or create_default_token()
         
-        response_text = self.get_response(user_input, token)
+        response_text, retrieved_docs = self.get_response(user_input, token)
         
         return {
             "response": response_text,
@@ -141,7 +142,8 @@ class Chatbot:
                 "site_id": config.SITE_ID,
                 "privacy_level": token.privacy_level,
                 "role": token.role,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.datetime.now().isoformat(),
+                "retrieved_documents": retrieved_docs
             },
             "status": "success"
         }

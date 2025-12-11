@@ -9,7 +9,7 @@ function Icon({ path }) {
   )
 }
 
-const MessageRow = memo(({ role, content, animate }) => {
+const MessageRow = memo(({ role, content, animate, onContentUpdate }) => {
   const isUser = role === 'user'
   const [displayContent, setDisplayContent] = useState(animate && !isUser ? '' : content)
 
@@ -24,13 +24,14 @@ const MessageRow = memo(({ role, content, animate }) => {
     const interval = setInterval(() => {
       i++
       setDisplayContent(content.substring(0, i))
+      if (onContentUpdate) onContentUpdate()
       if (i >= content.length) {
         clearInterval(interval)
       }
     }, 15) // Typing speed
 
     return () => clearInterval(interval)
-  }, [content, animate, isUser])
+  }, [content, animate, isUser, onContentUpdate])
 
   return (
     <div className={`message-row ${isUser ? 'user' : 'assistant'}`}>
@@ -63,10 +64,14 @@ export default function ChatView({ messages, loading, thinking, latestResponseId
     }
   }, [text])
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
+  }
+
+  useEffect(() => {
+    scrollToBottom()
   }, [messages, thinking])
 
   const handleSend = (e) => {
@@ -100,6 +105,7 @@ export default function ChatView({ messages, loading, thinking, latestResponseId
                 role={m.role} 
                 content={m.content} 
                 animate={m.id === latestResponseId}
+                onContentUpdate={m.id === latestResponseId ? scrollToBottom : undefined}
               />
             ))}
             {thinking && (
